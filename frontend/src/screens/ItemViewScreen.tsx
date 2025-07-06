@@ -5,14 +5,15 @@ import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const ItemViewScreen: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [article, setArticle] = useState<Article | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'summary' | 'full'>('summary');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedSummary, setEditedSummary] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  try {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const [article, setArticle] = useState<Article | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'summary' | 'full'>('summary');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedSummary, setEditedSummary] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -86,129 +87,116 @@ const ItemViewScreen: React.FC = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Header showBackButton={true} />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* Article Header */}
-          <div className="p-6 border-b border-gray-200 text-left">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              {article.title}
-            </h1>
-            <div className="flex items-center text-sm text-gray-500 space-x-4 mb-4">
-              <span>Source: {article.publication_name}</span>
-              <span>•</span>
-              <span>Added: {formatDate(article.date_added)}</span>
-              <span>•</span>
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800"
-              >
-                View Original
-              </a>
-            </div>
-            
-            {/* View Toggle with Edit Button */}
-            <div className="flex justify-between items-center">
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setViewMode('summary')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'summary'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header showBackButton={true} />
+        
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm">
+            {/* Article Header */}
+            <div className="p-6 border-b border-gray-200 text-left">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                {article.title}
+              </h1>
+              <div className="flex items-center text-sm text-gray-500 space-x-4 mb-4">
+                <span>Source: {article.publication_name}</span>
+                <span>•</span>
+                <span>Added: {formatDate(article.date_added)}</span>
+                <span>•</span>
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800"
                 >
-                  Summary
-                </button>
-                <button
-                  onClick={() => setViewMode('full')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'full'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Full Article
-                </button>
+                  View Original
+                </a>
               </div>
-              {viewMode === 'summary' && !isEditing && (
-                <button
-                  onClick={() => {
-                    console.log('Edit button clicked, setting isEditing to true');
-                    setIsEditing(true);
-                  }}
-                  className="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-                >
-                  Edit
-                </button>
+              
+              {/* View Toggle with Edit Button */}
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setViewMode('summary')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === 'summary'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Summary
+                  </button>
+                  <button
+                    onClick={() => setViewMode('full')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === 'full'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Full Article
+                  </button>
+                </div>
+                {viewMode === 'summary' && !isEditing && (
+                  <button
+                    onClick={() => {
+                      console.log('Edit button clicked, setting isEditing to true');
+                      setIsEditing(true);
+                    }}
+                    className="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 text-left">
+              {viewMode === 'summary' ? (
+                <div>
+                  <div className="mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">Summary</h2>
+                  </div>
+                  
+                  {isEditing ? (
+                    <div>
+                      <h3>EDIT MODE</h3>
+                      <button onClick={() => setIsEditing(false)}>Cancel</button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="formatted-text text-gray-800"
+                      dangerouslySetInnerHTML={{ 
+                        __html: article.summary
+                      }}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Full Article</h2>
+                  <div className="formatted-text text-gray-800 whitespace-pre-wrap">
+                    {article.full_text}
+                  </div>
+                </div>
               )}
             </div>
           </div>
-
-          {/* Content */}
-          <div className="p-6 text-left">
-            {viewMode === 'summary' ? (
-              <div>
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Summary</h2>
-                </div>
-                
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <p className="text-red-600 font-bold">DEBUG: Edit mode is active. If you see this, the component is rendering correctly.</p>
-                    <p className="text-sm text-gray-600">Current summary length: {editedSummary.length}</p>
-                    
-                    {/* Simple textarea editor for now */}
-                    <textarea
-                      value={editedSummary}
-                      onChange={(e) => setEditedSummary(e.target.value)}
-                      className="w-full min-h-[300px] p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      placeholder="Edit the summary..."
-                    />
-                    
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={handleSaveSummary}
-                        disabled={isSaving}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isSaving ? 'Saving...' : 'Save'}
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div 
-                    className="formatted-text text-gray-800"
-                    dangerouslySetInnerHTML={{ 
-                      __html: article.summary
-                    }}
-                  />
-                )}
-              </div>
-            ) : (
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Full Article</h2>
-                <div className="formatted-text text-gray-800 whitespace-pre-wrap">
-                  {article.full_text}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error('ItemViewScreen error:', error);
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="p-8">
+          <h1 className="text-2xl font-bold text-red-600">Error occurred</h1>
+          <p>Check the console for details</p>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default ItemViewScreen;
