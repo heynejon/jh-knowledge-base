@@ -133,21 +133,34 @@ async def create_article(article_data: dict, db=Depends(get_database)):
 @app.get("/api/articles/{article_id}")
 async def get_article(article_id: str, db=Depends(get_database)):
     try:
+        print(f"Getting article with ID: {article_id}")
+        
+        # Debug: Check what articles exist in the database
+        all_articles = list(db.articles.find())
+        print(f"Available articles: {[art.get('_id') for art in all_articles]}")
+        
         # Handle both MongoDB ObjectId and mock IDs
         if article_id.startswith("mock_id_"):
             # For mock database
+            print(f"Using mock database query for ID: {article_id}")
             article = db.articles.find_one({"_id": article_id})
+            print(f"Mock database result: {article}")
         else:
             # For real MongoDB
+            print(f"Using MongoDB ObjectId query for ID: {article_id}")
             from bson import ObjectId
             article = db.articles.find_one({"_id": ObjectId(article_id)})
+            print(f"MongoDB result: {article}")
             
         if not article:
+            print(f"Article not found for ID: {article_id}")
             raise HTTPException(status_code=404, detail="Article not found")
         
         article["_id"] = str(article["_id"])
+        print(f"Returning article: {article.get('title', 'No title')}")
         return article
     except Exception as e:
+        print(f"Error getting article {article_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/articles/{article_id}")
