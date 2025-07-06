@@ -140,13 +140,11 @@ def get_database():
             serverSelectionTimeoutMS=15000,
             socketTimeoutMS=15000,
             connectTimeoutMS=15000,
-            ssl=True,
-            ssl_cert_reqs=ssl.CERT_NONE,
-            ssl_match_hostname=False,
+            tls=True,
+            tlsAllowInvalidCertificates=True,
+            tlsAllowInvalidHostnames=True,
             retryWrites=True,
-            w='majority',
-            maxPoolSize=10,
-            minPoolSize=1
+            w='majority'
         )
         
         # Test the connection
