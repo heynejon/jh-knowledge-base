@@ -168,8 +168,6 @@ def get_database():
                 socketTimeoutMS=10000,
                 connectTimeoutMS=10000,
                 tls=True,
-                tlsAllowInvalidCertificates=True,
-                tlsAllowInvalidHostnames=True,
                 tlsInsecure=True,
                 retryWrites=True
             )
