@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 
 const ItemViewScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -65,32 +63,6 @@ const ItemViewScreen: React.FC = () => {
     });
   };
 
-  // Quill editor configuration
-  const quillModules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'font': [] }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'script': 'sub'}, { 'script': 'super' }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'direction': 'rtl' }],
-      [{ 'align': [] }],
-      ['link', 'image', 'video'],
-      ['clean']
-    ],
-  };
-
-  const quillFormats = [
-    'header', 'font', 'size',
-    'bold', 'italic', 'underline', 'strike', 'blockquote',
-    'list', 'bullet', 'indent',
-    'link', 'image', 'video',
-    'color', 'background',
-    'script', 'align', 'direction'
-  ];
 
   if (loading) {
     return (
@@ -187,23 +159,12 @@ const ItemViewScreen: React.FC = () => {
                 
                 {isEditing ? (
                   <div className="space-y-4">
-                    <div className="border border-gray-300 rounded-md">
-                      {typeof window !== 'undefined' ? (
-                        <ReactQuill
-                          theme="snow"
-                          value={editedSummary || ''}
-                          onChange={(value) => setEditedSummary(value || '')}
-                          modules={quillModules}
-                          formats={quillFormats}
-                          placeholder="Edit the summary..."
-                          style={{ minHeight: '300px' }}
-                        />
-                      ) : (
-                        <div className="p-4 text-center text-gray-500">
-                          Loading editor...
-                        </div>
-                      )}
-                    </div>
+                    <textarea
+                      value={editedSummary}
+                      onChange={(e) => setEditedSummary(e.target.value)}
+                      className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Edit the summary..."
+                    />
                     <div className="flex space-x-2">
                       <button
                         onClick={handleSaveSummary}
