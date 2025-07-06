@@ -140,9 +140,16 @@ def get_database():
         if not mongodb_url.startswith('mongodb+srv://'):
             print(f"WARNING: URL should use mongodb+srv:// format, got: {mongodb_url[:20]}...")
         
-        # Approach 1: Use Atlas-recommended connection with CA file
+        # Approach 1: Use explicit SSL context configuration
         import certifi
         print(f"Using CA file: {certifi.where()}")
+        
+        # Create SSL context with specific MongoDB Atlas compatible settings
+        ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        ssl_context.load_verify_locations(certifi.where())
+        ssl_context.check_hostname = True
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+        ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
         
         client = MongoClient(
             mongodb_url,
@@ -151,6 +158,7 @@ def get_database():
             connectTimeoutMS=15000,
             tls=True,
             tlsCAFile=certifi.where(),
+            ssl_context=ssl_context,
             retryWrites=True,
             w='majority'
         )
