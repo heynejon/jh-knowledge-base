@@ -93,14 +93,14 @@ const ItemViewScreen: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-sm">
           {/* Article Header */}
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-gray-200 text-left">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
               {article.title}
             </h1>
             <div className="flex items-center text-sm text-gray-500 space-x-4 mb-4">
-              <span>{article.publication_name}</span>
+              <span>Source: {article.publication_name}</span>
               <span>•</span>
-              <span>{formatDate(article.date_added)}</span>
+              <span>Added: {formatDate(article.date_added)}</span>
               <span>•</span>
               <a
                 href={article.url}
@@ -112,45 +112,47 @@ const ItemViewScreen: React.FC = () => {
               </a>
             </div>
             
-            {/* View Toggle */}
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setViewMode('summary')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'summary'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Summary
-              </button>
-              <button
-                onClick={() => setViewMode('full')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'full'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Full Article
-              </button>
+            {/* View Toggle with Edit Button */}
+            <div className="flex justify-between items-center">
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setViewMode('summary')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'summary'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Summary
+                </button>
+                <button
+                  onClick={() => setViewMode('full')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'full'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Full Article
+                </button>
+              </div>
+              {viewMode === 'summary' && !isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                >
+                  Edit
+                </button>
+              )}
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-6 text-left">
             {viewMode === 'summary' ? (
               <div>
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h2 className="text-lg font-semibold text-gray-900">Summary</h2>
-                  {!isEditing && (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Edit
-                    </button>
-                  )}
                 </div>
                 
                 {isEditing ? (
