@@ -35,6 +35,18 @@ async def read_root():
         return FileResponse("../frontend/build/index.html")
     return {"message": "JH Knowledge Base API"}
 
+# Catch-all route for React Router
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    # Don't catch API routes
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+    
+    # Serve React app for all other routes
+    if os.path.exists("../frontend/build/index.html"):
+        return FileResponse("../frontend/build/index.html")
+    return {"message": "JH Knowledge Base API"}
+
 @app.get("/api/articles")
 async def get_articles(search: Optional[str] = None, db=Depends(get_database)):
     try:
