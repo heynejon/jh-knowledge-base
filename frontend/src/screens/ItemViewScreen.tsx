@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const ItemViewScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -62,21 +64,32 @@ const ItemViewScreen: React.FC = () => {
     });
   };
 
-  const formatText = (text: string) => {
-    // Convert plain text to formatted HTML
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold: **text**
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic: *text*
-      .replace(/__(.*?)__/g, '<u>$1</u>') // Underline: __text__
-      .replace(/`(.*?)`/g, '<code>$1</code>') // Inline code: `text`
-      .replace(/^### (.*$)/gm, '<h3>$1</h3>') // H3: ### text
-      .replace(/^## (.*$)/gm, '<h2>$1</h2>') // H2: ## text
-      .replace(/^# (.*$)/gm, '<h1>$1</h1>') // H1: # text
-      .replace(/^- (.*$)/gm, '<li>$1</li>') // List items: - text
-      .replace(/(\n|^)(\d+\. .*?)(?=\n|$)/g, '$1<li>$2</li>') // Numbered lists
-      .replace(/\n\n/g, '</p><p>') // Paragraphs
-      .replace(/\n/g, '<br>'); // Line breaks
+  // Quill editor configuration
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      [{ 'font': [] }],
+      [{ 'size': ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'script': 'sub'}, { 'script': 'super' }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'direction': 'rtl' }],
+      [{ 'align': [] }],
+      ['link', 'image', 'video'],
+      ['clean']
+    ],
   };
+
+  const quillFormats = [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image', 'video',
+    'color', 'background',
+    'script', 'align', 'direction'
+  ];
 
   if (loading) {
     return (
@@ -173,12 +186,17 @@ const ItemViewScreen: React.FC = () => {
                 
                 {isEditing ? (
                   <div className="space-y-4">
-                    <textarea
-                      value={editedSummary}
-                      onChange={(e) => setEditedSummary(e.target.value)}
-                      className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      placeholder="Edit the summary..."
-                    />
+                    <div className="border border-gray-300 rounded-md">
+                      <ReactQuill
+                        theme="snow"
+                        value={editedSummary}
+                        onChange={setEditedSummary}
+                        modules={quillModules}
+                        formats={quillFormats}
+                        placeholder="Edit the summary..."
+                        style={{ minHeight: '300px' }}
+                      />
+                    </div>
                     <div className="flex space-x-2">
                       <button
                         onClick={handleSaveSummary}
@@ -199,7 +217,7 @@ const ItemViewScreen: React.FC = () => {
                   <div 
                     className="formatted-text text-gray-800"
                     dangerouslySetInnerHTML={{ 
-                      __html: `<p>${formatText(article.summary)}</p>` 
+                      __html: article.summary
                     }}
                   />
                 )}
@@ -207,12 +225,9 @@ const ItemViewScreen: React.FC = () => {
             ) : (
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Full Article</h2>
-                <div 
-                  className="formatted-text text-gray-800"
-                  dangerouslySetInnerHTML={{ 
-                    __html: `<p>${formatText(article.full_text)}</p>` 
-                  }}
-                />
+                <div className="formatted-text text-gray-800 whitespace-pre-wrap">
+                  {article.full_text}
+                </div>
               </div>
             )}
           </div>
