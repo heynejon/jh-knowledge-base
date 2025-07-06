@@ -105,25 +105,24 @@ async def create_article(article_data: dict, db=Depends(get_database)):
         
         # Create article object
         print("Creating article object...")
-        article = Article(
-            title=scraped_data["title"],
-            publication_name=scraped_data["publication_name"],
-            full_text=scraped_data["full_text"],
-            summary=summary,
-            url=url,
-            date_added=datetime.now(),
-            created_at=datetime.now(),
-            updated_at=datetime.now()
-        )
+        article_data = {
+            "title": scraped_data["title"],
+            "publication_name": scraped_data["publication_name"],
+            "full_text": scraped_data["full_text"],
+            "summary": summary,
+            "url": url,
+            "date_added": datetime.now(),
+            "created_at": datetime.now(),
+            "updated_at": datetime.now()
+        }
         
         # Insert into database
         print("Saving to database...")
-        result = db.articles.insert_one(article.dict())
-        article_dict = article.dict()
-        article_dict["_id"] = str(result.inserted_id)
+        result = db.articles.insert_one(article_data)
+        article_data["_id"] = str(result.inserted_id)
         
         print("Article creation completed successfully")
-        return article_dict
+        return article_data
     except HTTPException:
         raise
     except Exception as e:
