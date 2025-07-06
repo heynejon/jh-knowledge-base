@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { Editor } from '@tinymce/tinymce-react';
+// @ts-ignore - React Quill types not fully compatible with React 19
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const ItemViewScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -64,6 +66,22 @@ const ItemViewScreen: React.FC = () => {
     });
   };
 
+  // Memoize Quill modules to prevent re-renders
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['link'],
+      ['clean']
+    ],
+  }), []);
+
+  const quillFormats = useMemo(() => [
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'align', 'link'
+  ], []);
 
   if (loading) {
     return (
@@ -160,34 +178,14 @@ const ItemViewScreen: React.FC = () => {
                 
                 {isEditing ? (
                   <div className="space-y-4">
-                    <Editor
-                      apiKey="no-api-key"
-                      value={editedSummary}
-                      onEditorChange={(content) => setEditedSummary(content)}
-                      init={{
-                        height: 400,
-                        menubar: false,
-                        plugins: [
-                          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                          'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                          'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                        ],
-                        toolbar: 'undo redo | blocks | ' +
-                          'bold italic underline strikethrough | alignleft aligncenter ' +
-                          'alignright alignjustify | bullist numlist outdent indent | ' +
-                          'removeformat | link | help',
-                        content_style: `
-                          body { 
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; 
-                            font-size: 14px; 
-                            line-height: 1.6;
-                          }
-                        `,
-                        skin: 'oxide',
-                        content_css: 'default',
-                        branding: false,
-                        promotion: false
-                      }}
+                    <ReactQuill
+                      theme="snow"
+                      value={editedSummary || ''}
+                      onChange={setEditedSummary}
+                      modules={quillModules}
+                      formats={quillFormats}
+                      placeholder="Edit the summary..."
+                      style={{ height: '300px', marginBottom: '50px' }}
                     />
                     <div className="flex space-x-2">
                       <button
