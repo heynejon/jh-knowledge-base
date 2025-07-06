@@ -297,7 +297,8 @@ async def test_mongo_connection():
             "ssl_version": ssl.OPENSSL_VERSION,
             "pymongo_version": pymongo.version,
             "certifi_location": certifi.where(),
-            "mongodb_url_format": "mongodb+srv://" in os.getenv("MONGODB_URL", "")
+            "mongodb_url_format": "mongodb+srv://" in os.getenv("MONGODB_URL", ""),
+            "tls_versions_supported": [v.name for v in ssl.TLSVersion]
         }
         
         # Test DNS resolution and basic connectivity
@@ -346,11 +347,50 @@ async def test_mongo_connection():
         # Check what type of database we got
         db_type = "MongoDB" if hasattr(db, 'client') else "Mock Database"
         
+        # Test TLS 1.3 support on Heroku
+        tls_test_results = {}
+        try:
+            mongodb_url = os.getenv("MONGODB_URL", "")
+            if mongodb_url and "mongodb+srv://" in mongodb_url:
+                domain = mongodb_url.split("@")[1].split("/")[0]
+                
+                # Test TLS 1.3 specifically
+                try:
+                    import dns.resolver
+                    srv_records = dns.resolver.resolve(f"_mongodb._tcp.{domain}", 'SRV')
+                    server_addresses = [str(srv.target).rstrip('.') for srv in srv_records]
+                    
+                    if server_addresses and hasattr(ssl, 'TLSVersion') and hasattr(ssl.TLSVersion, 'TLSv1_3'):
+                        server = server_addresses[0]
+                        
+                        # Test TLS 1.3
+                        context = ssl.create_default_context()
+                        context.minimum_version = ssl.TLSVersion.TLSv1_3
+                        context.maximum_version = ssl.TLSVersion.TLSv1_3
+                        context.check_hostname = False
+                        context.verify_mode = ssl.CERT_NONE
+                        
+                        test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        test_sock.settimeout(5)
+                        
+                        with context.wrap_socket(test_sock, server_hostname=server) as ssock:
+                            ssock.connect((server, 27017))
+                            tls_test_results["tls_1_3_test"] = {
+                                "status": "SUCCESS",
+                                "version": ssock.version(),
+                                "cipher": ssock.cipher()[0] if ssock.cipher() else "Unknown"
+                            }
+                except Exception as tls_error:
+                    tls_test_results["tls_1_3_test"] = {"status": "FAILED", "error": str(tls_error)}
+        except Exception as test_error:
+            tls_test_results["tls_test_error"] = str(test_error)
+
         return {
             "database_type": db_type,
             "connection_successful": True,
             "message": f"Connected to {db_type}",
-            "environment": env_info
+            "environment": env_info,
+            "tls_tests": tls_test_results
         }
     except Exception as e:
         print(f"MongoDB connection test failed: {str(e)}")
