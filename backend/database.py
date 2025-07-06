@@ -197,9 +197,11 @@ class ArticleService:
                 if not article:
                     return False
                 
-                # Update fields
+                # Update fields (map metadata to extra_data for compatibility)
                 for key, value in update_data.items():
-                    if hasattr(article, key):
+                    if key == "metadata":
+                        article.extra_data = value
+                    elif hasattr(article, key):
                         setattr(article, key, value)
                 
                 article.updated_at = datetime.now()

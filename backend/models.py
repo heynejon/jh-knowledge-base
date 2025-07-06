@@ -24,7 +24,7 @@ class Article(Base):
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
     
     # JSON field for future extensibility (tags, categories, user data, etc.)
-    metadata = Column(JSON, nullable=True)
+    extra_data = Column(JSON, nullable=True)
     
     def to_dict(self):
         """Convert to dictionary for API response"""
@@ -39,7 +39,7 @@ class Article(Base):
             "date_added": self.date_added,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "metadata": self.metadata or {}
+            "metadata": self.extra_data or {}
         }
 
 class Setting(Base):

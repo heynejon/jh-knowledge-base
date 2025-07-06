@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Optional
 import json
 
-from database import get_database, Article, Settings
+from database import get_database
 from scraper import scrape_article
 from summarizer import summarize_text
 
