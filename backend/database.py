@@ -101,7 +101,16 @@ class MockCollection:
         return type('Result', (), {'inserted_id': doc["_id"]})()
         
     def update_one(self, query, update):
-        return type('Result', (), {'matched_count': 1})()
+        items = self.data[self.name]
+        if query and "_id" in query:
+            target_id = str(query["_id"])
+            for item in items:
+                if str(item.get("_id")) == target_id:
+                    # Apply the $set update
+                    if "$set" in update:
+                        item.update(update["$set"])
+                    return type('Result', (), {'matched_count': 1})()
+        return type('Result', (), {'matched_count': 0})()
         
     def delete_one(self, query):
         items = self.data[self.name]

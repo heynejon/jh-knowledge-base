@@ -166,22 +166,38 @@ async def get_article(article_id: str, db=Depends(get_database)):
 @app.put("/api/articles/{article_id}")
 async def update_article(article_id: str, article_data: dict, db=Depends(get_database)):
     try:
-        from bson import ObjectId
+        print(f"Updating article with ID: {article_id}")
+        print(f"Update data: {article_data}")
         
         update_data = {"updated_at": datetime.now()}
         if "summary" in article_data:
             update_data["summary"] = article_data["summary"]
         
-        result = db.articles.update_one(
-            {"_id": ObjectId(article_id)},
-            {"$set": update_data}
-        )
+        # Handle both MongoDB ObjectId and mock IDs
+        if article_id.startswith("mock_id_"):
+            # For mock database
+            print(f"Using mock database update for ID: {article_id}")
+            result = db.articles.update_one(
+                {"_id": article_id},
+                {"$set": update_data}
+            )
+        else:
+            # For real MongoDB
+            print(f"Using MongoDB update for ID: {article_id}")
+            from bson import ObjectId
+            result = db.articles.update_one(
+                {"_id": ObjectId(article_id)},
+                {"$set": update_data}
+            )
+        
+        print(f"Update result: {result.matched_count}")
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Article not found")
         
         return {"message": "Article updated successfully"}
     except Exception as e:
+        print(f"Error updating article {article_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/articles/{article_id}")
