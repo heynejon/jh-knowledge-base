@@ -131,19 +131,19 @@ def get_database():
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
     database_name = os.getenv("DATABASE_NAME", "jh_knowledge_base")
     
-    # Try MongoDB Atlas first - Use simple approach that works locally
+    # Try MongoDB Atlas first - Use PyMongo 3.x compatible parameters
     try:
         print("Attempting MongoDB Atlas connection...")
         print(f"Using MongoDB URL: {mongodb_url[:20]}...")
         
-        # Use the same simple approach that works locally
+        # PyMongo 3.x compatible parameters
         client = MongoClient(
             mongodb_url,
             serverSelectionTimeoutMS=10000,
             socketTimeoutMS=10000,
             connectTimeoutMS=10000,
-            tls=True,
-            tlsInsecure=True,
+            ssl=True,
+            ssl_cert_reqs='CERT_NONE',
             retryWrites=True
         )
         
