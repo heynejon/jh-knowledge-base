@@ -133,8 +133,15 @@ async def create_article(article_data: dict, db=Depends(get_database)):
 @app.get("/api/articles/{article_id}")
 async def get_article(article_id: str, db=Depends(get_database)):
     try:
-        from bson import ObjectId
-        article = db.articles.find_one({"_id": ObjectId(article_id)})
+        # Handle both MongoDB ObjectId and mock IDs
+        if article_id.startswith("mock_id_"):
+            # For mock database
+            article = db.articles.find_one({"_id": article_id})
+        else:
+            # For real MongoDB
+            from bson import ObjectId
+            article = db.articles.find_one({"_id": ObjectId(article_id)})
+            
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
         
