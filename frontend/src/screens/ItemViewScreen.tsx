@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
@@ -13,6 +13,7 @@ const ItemViewScreen: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedSummary, setEditedSummary] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -63,6 +64,57 @@ const ItemViewScreen: React.FC = () => {
     });
   };
 
+  const insertFormatting = (tag: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = editedSummary.substring(start, end);
+    
+    let replacement = '';
+    if (selectedText) {
+      // Wrap selected text
+      replacement = `<${tag}>${selectedText}</${tag}>`;
+    } else {
+      // Insert tags at cursor
+      replacement = `<${tag}></${tag}>`;
+    }
+    
+    const newText = editedSummary.substring(0, start) + replacement + editedSummary.substring(end);
+    setEditedSummary(newText);
+    
+    // Set cursor position
+    setTimeout(() => {
+      const newPosition = selectedText ? start + replacement.length : start + tag.length + 2;
+      textarea.focus();
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
+
+  const insertLink = () => {
+    const url = prompt('Enter URL:');
+    const text = prompt('Enter link text:') || url;
+    if (url && text) {
+      insertCustomTag(`<a href="${url}">${text}</a>`);
+    }
+  };
+
+  const insertCustomTag = (content: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    
+    const newText = editedSummary.substring(0, start) + content + editedSummary.substring(end);
+    setEditedSummary(newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + content.length, start + content.length);
+    }, 0);
+  };
 
   if (loading) {
     return (
@@ -159,11 +211,65 @@ const ItemViewScreen: React.FC = () => {
                 
                 {isEditing ? (
                   <div className="space-y-4">
+                    {/* Formatting Toolbar */}
+                    <div className="border border-gray-300 rounded-md p-2 bg-gray-50">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting('strong')}
+                          className="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-bold hover:bg-gray-100"
+                          title="Bold"
+                        >
+                          B
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting('em')}
+                          className="px-3 py-1 bg-white border border-gray-300 rounded text-sm italic hover:bg-gray-100"
+                          title="Italic"
+                        >
+                          I
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting('u')}
+                          className="px-3 py-1 bg-white border border-gray-300 rounded text-sm underline hover:bg-gray-100"
+                          title="Underline"
+                        >
+                          U
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting('h3')}
+                          className="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-semibold hover:bg-gray-100"
+                          title="Heading"
+                        >
+                          H3
+                        </button>
+                        <button
+                          type="button"
+                          onClick={insertLink}
+                          className="px-3 py-1 bg-white border border-gray-300 rounded text-sm text-blue-600 hover:bg-gray-100"
+                          title="Link"
+                        >
+                          Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertCustomTag('<li></li>')}
+                          className="px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-100"
+                          title="List Item"
+                        >
+                          • Li
+                        </button>
+                      </div>
+                    </div>
                     <textarea
+                      ref={textareaRef}
                       value={editedSummary}
                       onChange={(e) => setEditedSummary(e.target.value)}
-                      className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      placeholder="Edit the summary..."
+                      className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+                      placeholder="Edit the summary... Use the toolbar above to add formatting."
                     />
                     <div className="flex space-x-2">
                       <button
