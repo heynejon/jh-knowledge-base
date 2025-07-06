@@ -279,6 +279,32 @@ async def export_articles(db=Depends(get_database)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/test-mongo")
+async def test_mongo_connection():
+    """Test endpoint to force MongoDB connection attempt"""
+    try:
+        print("=== TESTING MONGODB CONNECTION ===")
+        
+        # Import here to test the connection logic
+        from database import get_database
+        db = get_database()
+        
+        # Check what type of database we got
+        db_type = "MongoDB" if hasattr(db, 'client') else "Mock Database"
+        
+        return {
+            "database_type": db_type,
+            "connection_successful": True,
+            "message": f"Connected to {db_type}"
+        }
+    except Exception as e:
+        print(f"MongoDB connection test failed: {str(e)}")
+        return {
+            "database_type": "Unknown",
+            "connection_successful": False,
+            "error": str(e)
+        }
+
 # Catch-all route for React Router (must be last)
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
