@@ -142,7 +142,7 @@ const AllArticlesScreen: React.FC = () => {
                 <Link
                   key={article._id}
                   to={`/article/${article._id}`}
-                  className="block hover:bg-gray-50 transition-colors"
+                  className="block hover:bg-gray-50 transition-colors no-underline"
                 >
                   <div className="p-3">
                     <div className="flex items-start justify-between">
