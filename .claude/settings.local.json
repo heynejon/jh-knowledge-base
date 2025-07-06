@@ -4,7 +4,8 @@
       "Bash(npm run build:*)",
       "Bash(curl:*)",
       "Bash(-H \"Content-Type: application/json\")",
-      "Bash(heroku logs:*)"
+      "Bash(heroku logs:*)",
+      "Bash(heroku stack:*)"
     ],
     "deny": []
   }
