@@ -135,14 +135,16 @@ def get_database():
     try:
         print("Attempting MongoDB Atlas connection...")
         
+        # Approach 1: Try with explicit CA file
+        import certifi
+        
         client = MongoClient(
             mongodb_url,
             serverSelectionTimeoutMS=15000,
             socketTimeoutMS=15000,
             connectTimeoutMS=15000,
             tls=True,
-            tlsAllowInvalidCertificates=True,
-            tlsAllowInvalidHostnames=True,
+            tlsCAFile=certifi.where(),
             retryWrites=True,
             w='majority'
         )
@@ -154,8 +156,33 @@ def get_database():
         return db
         
     except Exception as e:
-        print(f"MongoDB Atlas connection failed: {str(e)}")
-        print("Falling back to mock database...")
+        print(f"MongoDB Atlas connection attempt 1 failed: {str(e)}")
+        
+        # Approach 2: Try without CA validation
+        try:
+            print("Attempting MongoDB Atlas connection (no cert validation)...")
+            
+            client = MongoClient(
+                mongodb_url,
+                serverSelectionTimeoutMS=10000,
+                socketTimeoutMS=10000,
+                connectTimeoutMS=10000,
+                tls=True,
+                tlsAllowInvalidCertificates=True,
+                tlsAllowInvalidHostnames=True,
+                tlsInsecure=True,
+                retryWrites=True
+            )
+            
+            # Test the connection
+            client.admin.command('ping')
+            db = client[database_name]
+            print("MongoDB Atlas connection successful (no validation)!")
+            return db
+            
+        except Exception as e2:
+            print(f"MongoDB Atlas connection attempt 2 failed: {str(e2)}")
+            print("Falling back to mock database...")
         
         # Fall back to mock database
         if _mock_db_instance is None:

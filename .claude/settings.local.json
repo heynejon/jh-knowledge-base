@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm run build:*)",
       "Bash(curl:*)",
-      "Bash(-H \"Content-Type: application/json\")"
+      "Bash(-H \"Content-Type: application/json\")",
+      "Bash(heroku logs:*)"
     ],
     "deny": []
   }
