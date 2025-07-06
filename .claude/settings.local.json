@@ -5,7 +5,8 @@
       "Bash(curl:*)",
       "Bash(-H \"Content-Type: application/json\")",
       "Bash(heroku logs:*)",
-      "Bash(heroku stack:*)"
+      "Bash(heroku stack:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

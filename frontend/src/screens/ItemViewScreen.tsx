@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
-// @ts-ignore - React Quill types not fully compatible with React 19
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 
 const ItemViewScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +13,7 @@ const ItemViewScreen: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedSummary, setEditedSummary] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -28,7 +26,6 @@ const ItemViewScreen: React.FC = () => {
       setLoading(true);
       const data = await articleApi.getArticle(articleId);
       setArticle(data);
-      // Ensure summary is properly formatted for Quill
       setEditedSummary(data.summary || '');
     } catch (error) {
       console.error('Error loading article:', error);
@@ -38,12 +35,14 @@ const ItemViewScreen: React.FC = () => {
   };
 
   const handleSaveSummary = async () => {
-    if (!article || !id) return;
+    if (!article || !id || !editorRef.current) return;
 
     try {
       setIsSaving(true);
-      await articleApi.updateArticle(id, { summary: editedSummary });
-      setArticle({ ...article, summary: editedSummary });
+      const content = editorRef.current.innerHTML;
+      await articleApi.updateArticle(id, { summary: content });
+      setArticle({ ...article, summary: content });
+      setEditedSummary(content);
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving summary:', error);
@@ -58,6 +57,11 @@ const ItemViewScreen: React.FC = () => {
     setIsEditing(false);
   };
 
+  const handleFormatting = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    editorRef.current?.focus();
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -66,22 +70,6 @@ const ItemViewScreen: React.FC = () => {
     });
   };
 
-  // Memoize Quill modules to prevent re-renders
-  const quillModules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'align': [] }],
-      ['link'],
-      ['clean']
-    ],
-  }), []);
-
-  const quillFormats = useMemo(() => [
-    'header', 'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet', 'align', 'link'
-  ], []);
 
   if (loading) {
     return (
@@ -178,15 +166,72 @@ const ItemViewScreen: React.FC = () => {
                 
                 {isEditing ? (
                   <div className="space-y-4">
-                    <ReactQuill
-                      theme="snow"
-                      value={editedSummary || ''}
-                      onChange={setEditedSummary}
-                      modules={quillModules}
-                      formats={quillFormats}
-                      placeholder="Edit the summary..."
-                      style={{ height: '300px', marginBottom: '50px' }}
+                    {/* Modern Formatting Toolbar */}
+                    <div className="border border-gray-300 rounded-t-lg p-3 bg-gray-50 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleFormatting('bold')}
+                        className="px-3 py-1 text-sm font-bold border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        B
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatting('italic')}
+                        className="px-3 py-1 text-sm italic border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatting('underline')}
+                        className="px-3 py-1 text-sm underline border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        U
+                      </button>
+                      <div className="w-px h-6 bg-gray-300"></div>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatting('insertUnorderedList')}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        • List
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatting('insertOrderedList')}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        1. List
+                      </button>
+                      <div className="w-px h-6 bg-gray-300"></div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = prompt('Enter URL:');
+                          if (url) handleFormatting('createLink', url);
+                        }}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        🔗 Link
+                      </button>
+                    </div>
+                    
+                    {/* Rich Text Editor */}
+                    <div
+                      ref={editorRef}
+                      contentEditable
+                      suppressContentEditableWarning={true}
+                      className="min-h-[300px] p-4 border border-gray-300 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      style={{ lineHeight: '1.7' }}
+                      dangerouslySetInnerHTML={{ __html: editedSummary }}
+                      onBlur={() => {
+                        if (editorRef.current) {
+                          setEditedSummary(editorRef.current.innerHTML);
+                        }
+                      }}
                     />
+                    
                     <div className="flex space-x-2">
                       <button
                         onClick={handleSaveSummary}
