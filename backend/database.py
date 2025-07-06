@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 import os
+import ssl
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -130,26 +131,42 @@ def get_database():
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
     database_name = os.getenv("DATABASE_NAME", "jh_knowledge_base")
     
-    # Use mock database for now due to SSL issues with MongoDB Atlas on Heroku
-    print("Using mock database due to MongoDB Atlas SSL issues")
-    if _mock_db_instance is None:
-        print("Creating new mock database instance")
-        _mock_db_instance = MockDatabase()
-    else:
-        print(f"Reusing mock database with {len(_mock_db_instance.data['articles'])} articles")
-    return _mock_db_instance
-    
-    # Original MongoDB code (commented out due to SSL issues)
-    # try:
-    #     client = MongoClient(
-    #         mongodb_url,
-    #         serverSelectionTimeoutMS=10000,
-    #         socketTimeoutMS=10000,
-    #         connectTimeoutMS=10000
-    #     )
-    #     client.admin.command('ping')
-    #     db = client[database_name]
-    #     return db
-    # except Exception as e:
-    #     print(f"MongoDB connection error: {str(e)}")
-    #     raise
+    # Try MongoDB Atlas first
+    try:
+        print("Attempting MongoDB Atlas connection...")
+        
+        # Create SSL context with relaxed verification
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        client = MongoClient(
+            mongodb_url,
+            serverSelectionTimeoutMS=15000,
+            socketTimeoutMS=15000,
+            connectTimeoutMS=15000,
+            ssl=True,
+            ssl_context=ssl_context,
+            retryWrites=True,
+            w='majority',
+            maxPoolSize=10,
+            minPoolSize=1
+        )
+        
+        # Test the connection
+        client.admin.command('ping')
+        db = client[database_name]
+        print("MongoDB Atlas connection successful!")
+        return db
+        
+    except Exception as e:
+        print(f"MongoDB Atlas connection failed: {str(e)}")
+        print("Falling back to mock database...")
+        
+        # Fall back to mock database
+        if _mock_db_instance is None:
+            print("Creating new mock database instance")
+            _mock_db_instance = MockDatabase()
+        else:
+            print(f"Reusing mock database with {len(_mock_db_instance.data['articles'])} articles")
+        return _mock_db_instance
