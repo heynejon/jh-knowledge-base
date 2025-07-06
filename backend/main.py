@@ -26,12 +26,16 @@ app.add_middleware(
 )
 
 # Mount static files for React frontend
-if os.path.exists("../frontend/build"):
+if os.path.exists("static_frontend"):
+    app.mount("/static", StaticFiles(directory="static_frontend/static"), name="static")
+elif os.path.exists("../frontend/build"):
     app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
 
 @app.get("/")
 async def read_root():
-    if os.path.exists("../frontend/build/index.html"):
+    if os.path.exists("static_frontend/index.html"):
+        return FileResponse("static_frontend/index.html")
+    elif os.path.exists("../frontend/build/index.html"):
         return FileResponse("../frontend/build/index.html")
     return {"message": "JH Knowledge Base API"}
 
@@ -43,7 +47,9 @@ async def catch_all(full_path: str):
         raise HTTPException(status_code=404, detail="API endpoint not found")
     
     # Serve React app for all other routes
-    if os.path.exists("../frontend/build/index.html"):
+    if os.path.exists("static_frontend/index.html"):
+        return FileResponse("static_frontend/index.html")
+    elif os.path.exists("../frontend/build/index.html"):
         return FileResponse("../frontend/build/index.html")
     return {"message": "JH Knowledge Base API"}
 
