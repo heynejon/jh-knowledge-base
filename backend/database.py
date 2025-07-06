@@ -1,179 +1,399 @@
-from pymongo import MongoClient
-from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel
+"""
+PostgreSQL database connection and operations using SQLAlchemy
+"""
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.exc import SQLAlchemyError
+from contextlib import contextmanager
 import os
-import ssl
+import logging
 from dotenv import load_dotenv
+from datetime import datetime
+from typing import Optional, List, Dict, Any
+from urllib.parse import urlparse
+
+from models import Base, Article, Setting, User, UserArticle
 
 load_dotenv()
 
-class Article(BaseModel):
-    title: str
-    publication_name: str
-    full_text: str
-    summary: str
-    url: str
-    date_added: datetime
-    created_at: datetime
-    updated_at: datetime
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-class Settings(BaseModel):
-    key: str
-    value: str
+# Database configuration
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    # Heroku uses postgres:// but SQLAlchemy 1.4+ requires postgresql://
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-class MockDatabase:
-    """Mock database for testing when MongoDB Atlas is not available"""
-    def __init__(self):
-        self.data = {"articles": [], "settings": []}
-        
-    @property
-    def articles(self):
-        return MockCollection("articles", self.data)
-        
-    @property  
-    def settings(self):
-        return MockCollection("settings", self.data)
+# Create engine with connection pooling
+engine = None
+SessionLocal = None
 
-class MockCursor:
-    def __init__(self, data):
-        self.data = data
-        
-    def sort(self, field, direction=-1):
-        # Sort by date_added field if available, newest first
-        if field == "date_added" and self.data:
-            try:
-                self.data = sorted(self.data, key=lambda x: x.get("date_added", ""), reverse=(direction == -1))
-            except:
-                pass  # If sorting fails, just return as is
-        return self
-        
-    def __iter__(self):
-        return iter(self.data)
-        
-    def __getitem__(self, index):
-        return self.data[index]
-
-class MockCollection:
-    def __init__(self, name, data):
-        self.name = name
-        self.data = data
-        
-    def find(self, query=None):
-        items = self.data[self.name]
-        if query:
-            # Simple query support for search
-            if "$or" in query:
-                filtered = []
-                search_term = ""
-                for condition in query["$or"]:
-                    for field, regex_obj in condition.items():
-                        if isinstance(regex_obj, dict) and "$regex" in regex_obj:
-                            search_term = regex_obj["$regex"].lower()
-                            break
-                
-                for item in items:
-                    item_text = (str(item.get("title", "")) + " " + 
-                                str(item.get("full_text", "")) + " " + 
-                                str(item.get("summary", "")) + " " + 
-                                str(item.get("publication_name", ""))).lower()
-                    if search_term in item_text:
-                        filtered.append(item)
-                return MockCursor(filtered)
-        return MockCursor(items)
-        
-    def find_one(self, query=None):
-        items = self.data[self.name]
-        if query:
-            if "key" in query:
-                for item in items:
-                    if item.get("key") == query["key"]:
-                        return item
-            elif "_id" in query:
-                target_id = str(query["_id"])
-                for item in items:
-                    if str(item.get("_id")) == target_id:
-                        return item
-        return items[0] if items else None
-        
-    def insert_one(self, doc):
-        doc["_id"] = f"mock_id_{len(self.data[self.name])}"
-        self.data[self.name].append(doc)
-        return type('Result', (), {'inserted_id': doc["_id"]})()
-        
-    def update_one(self, query, update):
-        items = self.data[self.name]
-        if query and "_id" in query:
-            target_id = str(query["_id"])
-            for item in items:
-                if str(item.get("_id")) == target_id:
-                    # Apply the $set update
-                    if "$set" in update:
-                        item.update(update["$set"])
-                    return type('Result', (), {'matched_count': 1})()
-        return type('Result', (), {'matched_count': 0})()
-        
-    def delete_one(self, query):
-        items = self.data[self.name]
-        if query and "_id" in query:
-            target_id = str(query["_id"])
-            for i, item in enumerate(items):
-                if str(item.get("_id")) == target_id:
-                    del items[i]
-                    return type('Result', (), {'deleted_count': 1})()
-        return type('Result', (), {'deleted_count': 0})()
-
-# Global mock database instance to persist data across requests
-_mock_db_instance = None
-
-def get_database():
-    global _mock_db_instance
-    mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
-    database_name = os.getenv("DATABASE_NAME", "jh_knowledge_base")
-    quotaguard_url = os.getenv("QUOTAGUARDSTATIC_URL")
+def init_database():
+    """Initialize database connection and create tables"""
+    global engine, SessionLocal
     
-    # Try MongoDB Atlas first - Use PyMongo 3.x compatible parameters with proxy
     try:
-        print("Attempting MongoDB Atlas connection...")
-        print(f"Using MongoDB URL: {mongodb_url[:20]}...")
-        
-        # Configure proxy if available - use environment variables for socks proxy
-        if quotaguard_url:
-            print("Using QuotaGuard Static proxy for MongoDB connection")
-            from urllib.parse import urlparse
-            parsed_proxy = urlparse(quotaguard_url)
+        if not DATABASE_URL:
+            logger.error("DATABASE_URL not found in environment variables")
+            return False
             
-            # Set proxy environment variables for the connection
-            proxy_url = f"http://{parsed_proxy.username}:{parsed_proxy.password}@{parsed_proxy.hostname}:{parsed_proxy.port}"
-            os.environ['HTTP_PROXY'] = proxy_url
-            os.environ['HTTPS_PROXY'] = proxy_url
-            print(f"Proxy configured: {parsed_proxy.hostname}:{parsed_proxy.port}")
+        logger.info("Initializing PostgreSQL database connection...")
         
-        # PyMongo 3.x compatible parameters
-        client = MongoClient(
-            mongodb_url,
-            serverSelectionTimeoutMS=15000,
-            socketTimeoutMS=15000,
-            connectTimeoutMS=15000,
-            ssl=True,
-            ssl_cert_reqs='CERT_NONE',
-            retryWrites=True
+        # Create engine with optimized settings for Heroku
+        engine = create_engine(
+            DATABASE_URL,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,  # Verify connections before use
+            pool_recycle=300,    # Recycle connections every 5 minutes
+            echo=False  # Set to True for SQL debugging
         )
         
-        # Test the connection
-        client.admin.command('ping')
-        db = client[database_name]
-        print("MongoDB Atlas connection successful!")
-        return db
+        # Test connection
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            logger.info(f"Database connection successful: {result.fetchone()}")
+        
+        # Create session factory
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        
+        # Create all tables
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully")
+        
+        # Initialize default settings
+        _init_default_settings()
+        
+        return True
         
     except Exception as e:
-        print(f"MongoDB Atlas connection failed: {str(e)}")
-        print("Falling back to mock database...")
-        
-        # Fall back to mock database
-        if _mock_db_instance is None:
-            print("Creating new mock database instance")
-            _mock_db_instance = MockDatabase()
+        logger.error(f"Database initialization failed: {str(e)}")
+        return False
+
+def _init_default_settings():
+    """Initialize default settings if they don't exist"""
+    try:
+        with get_db_session() as db:
+            # Check if summarization prompt exists
+            setting = db.query(Setting).filter(Setting.key == "summarization_prompt").first()
+            if not setting:
+                default_prompt = "Summarize the following article in a clear, concise manner:"
+                new_setting = Setting(key="summarization_prompt", value=default_prompt)
+                db.add(new_setting)
+                db.commit()
+                logger.info("Default summarization prompt created")
+                
+    except Exception as e:
+        logger.error(f"Failed to initialize default settings: {str(e)}")
+
+@contextmanager
+def get_db_session():
+    """Get database session with automatic cleanup"""
+    if not SessionLocal:
+        raise RuntimeError("Database not initialized. Call init_database() first.")
+    
+    db = SessionLocal()
+    try:
+        yield db
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Database session error: {str(e)}")
+        raise
+    finally:
+        db.close()
+
+def get_database():
+    """Get database session for dependency injection"""
+    return get_db_session()
+
+# Article operations
+class ArticleService:
+    """Service class for article operations"""
+    
+    @staticmethod
+    def create_article(article_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new article"""
+        try:
+            with get_db_session() as db:
+                # Create article with current timestamp
+                article = Article(
+                    title=article_data["title"],
+                    publication_name=article_data["publication_name"],
+                    full_text=article_data["full_text"],
+                    summary=article_data["summary"],
+                    url=article_data["url"],
+                    date_added=article_data.get("date_added", datetime.now()),
+                    created_at=article_data.get("created_at", datetime.now()),
+                    updated_at=datetime.now()
+                )
+                
+                db.add(article)
+                db.commit()
+                db.refresh(article)
+                
+                logger.info(f"Article created successfully: ID {article.id}")
+                return article.to_dict()
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Database error creating article: {str(e)}")
+            raise Exception(f"Failed to create article: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error creating article: {str(e)}")
+            raise Exception(f"Failed to create article: {str(e)}")
+    
+    @staticmethod
+    def get_articles(search: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get articles with optional search"""
+        try:
+            with get_db_session() as db:
+                query = db.query(Article)
+                
+                if search:
+                    # Full-text search across multiple fields
+                    search_term = f"%{search.lower()}%"
+                    query = query.filter(
+                        (Article.title.ilike(search_term)) |
+                        (Article.full_text.ilike(search_term)) |
+                        (Article.summary.ilike(search_term)) |
+                        (Article.publication_name.ilike(search_term))
+                    )
+                
+                # Order by date_added descending and limit results
+                articles = query.order_by(Article.date_added.desc()).limit(limit).all()
+                
+                return [article.to_dict() for article in articles]
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting articles: {str(e)}")
+            raise Exception(f"Failed to get articles: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error getting articles: {str(e)}")
+            raise Exception(f"Failed to get articles: {str(e)}")
+    
+    @staticmethod
+    def get_article_by_id(article_id: str) -> Optional[Dict[str, Any]]:
+        """Get a single article by ID"""
+        try:
+            with get_db_session() as db:
+                article = db.query(Article).filter(Article.id == int(article_id)).first()
+                return article.to_dict() if article else None
+                
+        except (ValueError, SQLAlchemyError) as e:
+            logger.error(f"Error getting article {article_id}: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error getting article {article_id}: {str(e)}")
+            return None
+    
+    @staticmethod
+    def update_article(article_id: str, update_data: Dict[str, Any]) -> bool:
+        """Update an article"""
+        try:
+            with get_db_session() as db:
+                article = db.query(Article).filter(Article.id == int(article_id)).first()
+                if not article:
+                    return False
+                
+                # Update fields
+                for key, value in update_data.items():
+                    if hasattr(article, key):
+                        setattr(article, key, value)
+                
+                article.updated_at = datetime.now()
+                db.commit()
+                
+                logger.info(f"Article {article_id} updated successfully")
+                return True
+                
+        except (ValueError, SQLAlchemyError) as e:
+            logger.error(f"Error updating article {article_id}: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error updating article {article_id}: {str(e)}")
+            return False
+    
+    @staticmethod
+    def delete_article(article_id: str) -> bool:
+        """Delete an article"""
+        try:
+            with get_db_session() as db:
+                article = db.query(Article).filter(Article.id == int(article_id)).first()
+                if not article:
+                    return False
+                
+                db.delete(article)
+                db.commit()
+                
+                logger.info(f"Article {article_id} deleted successfully")
+                return True
+                
+        except (ValueError, SQLAlchemyError) as e:
+            logger.error(f"Error deleting article {article_id}: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error deleting article {article_id}: {str(e)}")
+            return False
+
+# Settings operations
+class SettingsService:
+    """Service class for settings operations"""
+    
+    @staticmethod
+    def get_setting(key: str) -> Optional[str]:
+        """Get a setting value by key"""
+        try:
+            with get_db_session() as db:
+                setting = db.query(Setting).filter(Setting.key == key).first()
+                return setting.value if setting else None
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Error getting setting {key}: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error getting setting {key}: {str(e)}")
+            return None
+    
+    @staticmethod
+    def set_setting(key: str, value: str) -> bool:
+        """Set a setting value"""
+        try:
+            with get_db_session() as db:
+                setting = db.query(Setting).filter(Setting.key == key).first()
+                
+                if setting:
+                    setting.value = value
+                    setting.updated_at = datetime.now()
+                else:
+                    setting = Setting(key=key, value=value)
+                    db.add(setting)
+                
+                db.commit()
+                
+                logger.info(f"Setting {key} updated successfully")
+                return True
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Error setting {key}: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error setting {key}: {str(e)}")
+            return False
+    
+    @staticmethod
+    def get_all_settings() -> Dict[str, str]:
+        """Get all settings as a dictionary"""
+        try:
+            with get_db_session() as db:
+                settings = db.query(Setting).all()
+                return {setting.key: setting.value for setting in settings}
+                
+        except SQLAlchemyError as e:
+            logger.error(f"Error getting all settings: {str(e)}")
+            return {}
+        except Exception as e:
+            logger.error(f"Unexpected error getting all settings: {str(e)}")
+            return {}
+
+# Legacy compatibility classes (to match the old API)
+class LegacyDatabase:
+    """Legacy compatibility wrapper for the old MongoDB-style API"""
+    
+    def __init__(self):
+        self.articles = LegacyArticleCollection()
+        self.settings = LegacySettingCollection()
+
+class LegacyArticleCollection:
+    """Legacy collection wrapper for articles"""
+    
+    def find(self, query=None):
+        """Find articles with optional query"""
+        if query and "$or" in query:
+            # Extract search term from MongoDB-style query
+            search_term = ""
+            for condition in query["$or"]:
+                for field, regex_obj in condition.items():
+                    if isinstance(regex_obj, dict) and "$regex" in regex_obj:
+                        search_term = regex_obj["$regex"]
+                        break
+            return LegacyCursor(ArticleService.get_articles(search=search_term))
         else:
-            print(f"Reusing mock database with {len(_mock_db_instance.data['articles'])} articles")
-        return _mock_db_instance
+            return LegacyCursor(ArticleService.get_articles())
+    
+    def find_one(self, query=None):
+        """Find one article"""
+        if query and "_id" in query:
+            return ArticleService.get_article_by_id(str(query["_id"]))
+        return None
+    
+    def insert_one(self, doc):
+        """Insert one article"""
+        result = ArticleService.create_article(doc)
+        return type('Result', (), {'inserted_id': result["id"]})()
+    
+    def update_one(self, query, update):
+        """Update one article"""
+        if query and "_id" in query and "$set" in update:
+            success = ArticleService.update_article(str(query["_id"]), update["$set"])
+            return type('Result', (), {'matched_count': 1 if success else 0})()
+        return type('Result', (), {'matched_count': 0})()
+    
+    def delete_one(self, query):
+        """Delete one article"""
+        if query and "_id" in query:
+            success = ArticleService.delete_article(str(query["_id"]))
+            return type('Result', (), {'deleted_count': 1 if success else 0})()
+        return type('Result', (), {'deleted_count': 0})()
+
+class LegacySettingCollection:
+    """Legacy collection wrapper for settings"""
+    
+    def find_one(self, query=None):
+        """Find one setting"""
+        if query and "key" in query:
+            value = SettingsService.get_setting(query["key"])
+            return {"key": query["key"], "value": value} if value else None
+        return None
+    
+    def insert_one(self, doc):
+        """Insert one setting"""
+        success = SettingsService.set_setting(doc["key"], doc["value"])
+        return type('Result', (), {'inserted_id': doc["key"] if success else None})()
+    
+    def update_one(self, query, update, upsert=False):
+        """Update one setting"""
+        if query and "key" in query and "$set" in update:
+            success = SettingsService.set_setting(query["key"], update["$set"]["value"])
+            return type('Result', (), {'matched_count': 1 if success else 0})()
+        return type('Result', (), {'matched_count': 0})()
+
+class LegacyCursor:
+    """Legacy cursor wrapper"""
+    
+    def __init__(self, data):
+        self.data = data
+    
+    def sort(self, field, direction=-1):
+        """Sort results (already sorted by date in ArticleService)"""
+        return self
+    
+    def __iter__(self):
+        return iter(self.data)
+    
+    def __list__(self):
+        return list(self.data)
+
+# Initialize database on import
+def get_database_legacy():
+    """Get database instance with legacy MongoDB-style API"""
+    if not engine:
+        if not init_database():
+            logger.error("Failed to initialize database")
+            return None
+    
+    return LegacyDatabase()
+
+# For backwards compatibility
+get_database = get_database_legacy
