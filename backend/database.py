@@ -25,7 +25,21 @@ def get_database():
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
     database_name = os.getenv("DATABASE_NAME", "jh_knowledge_base")
     
-    client = MongoClient(mongodb_url)
-    db = client[database_name]
-    
-    return db
+    try:
+        # Configure MongoDB client with SSL settings for Atlas
+        client = MongoClient(
+            mongodb_url,
+            serverSelectionTimeoutMS=10000,  # 10 second timeout
+            socketTimeoutMS=10000,
+            connectTimeoutMS=10000,
+            tlsInsecure=True  # Allow insecure SSL for Atlas compatibility
+        )
+        
+        # Test the connection
+        client.admin.command('ping')
+        
+        db = client[database_name]
+        return db
+    except Exception as e:
+        print(f"MongoDB connection error: {str(e)}")
+        raise
