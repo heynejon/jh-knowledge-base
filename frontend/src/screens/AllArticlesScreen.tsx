@@ -144,20 +144,20 @@ const AllArticlesScreen: React.FC = () => {
                   to={`/article/${article._id}`}
                   className="block hover:bg-gray-50 transition-colors"
                 >
-                  <div className="p-6">
+                  <div className="p-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      <div className="flex-1 text-left">
+                        <h3 className="text-base font-medium text-gray-900 mb-1 line-clamp-2">
                           {article.title}
                         </h3>
-                        <div className="flex items-center text-sm text-gray-500 space-x-4">
-                          <span>{article.publication_name}</span>
+                        <div className="flex items-center text-xs text-gray-500 space-x-3">
+                          <span>Source: {article.publication_name}</span>
                           <span>•</span>
-                          <span>{formatDate(article.date_added)}</span>
+                          <span>Added: {formatDate(article.date_added)}</span>
                         </div>
                       </div>
-                      <div className="ml-4 flex-shrink-0">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="ml-3 flex-shrink-0">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
