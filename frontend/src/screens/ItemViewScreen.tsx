@@ -138,7 +138,10 @@ const ItemViewScreen: React.FC = () => {
               </div>
               {viewMode === 'summary' && !isEditing && (
                 <button
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    console.log('Edit button clicked, setting isEditing to true');
+                    setIsEditing(true);
+                  }}
                   className="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
                 >
                   Edit
@@ -157,6 +160,9 @@ const ItemViewScreen: React.FC = () => {
                 
                 {isEditing ? (
                   <div className="space-y-4">
+                    <p className="text-red-600 font-bold">DEBUG: Edit mode is active. If you see this, the component is rendering correctly.</p>
+                    <p className="text-sm text-gray-600">Current summary length: {editedSummary.length}</p>
+                    
                     {/* Simple textarea editor for now */}
                     <textarea
                       value={editedSummary}
