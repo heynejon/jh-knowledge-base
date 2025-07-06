@@ -1,24 +1,26 @@
-import openai
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def summarize_text(text: str, prompt: str) -> str:
     """
     Summarize the given text using OpenAI's GPT model with a custom prompt.
     """
     try:
-        if not openai.api_key:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
             raise Exception("OpenAI API key not found. Please set OPENAI_API_KEY in your .env file.")
         
-        # Combine the custom prompt with the article text
-        full_prompt = f"{prompt}\n\nArticle text:\n{text}"
+        # Initialize OpenAI client
+        client = OpenAI(api_key=api_key)
         
-        response = openai.chat.completions.create(
-            model="gpt-4",
+        # Combine the custom prompt with the article text
+        full_prompt = f"{prompt}\n\nArticle text:\n{text[:4000]}"  # Limit text length
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # Use cheaper, faster model
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that creates high-quality summaries of articles."},
                 {"role": "user", "content": full_prompt}
