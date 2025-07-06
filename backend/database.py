@@ -104,7 +104,14 @@ class MockCollection:
         return type('Result', (), {'matched_count': 1})()
         
     def delete_one(self, query):
-        return type('Result', (), {'deleted_count': 1})()
+        items = self.data[self.name]
+        if query and "_id" in query:
+            target_id = str(query["_id"])
+            for i, item in enumerate(items):
+                if str(item.get("_id")) == target_id:
+                    del items[i]
+                    return type('Result', (), {'deleted_count': 1})()
+        return type('Result', (), {'deleted_count': 0})()
 
 # Global mock database instance to persist data across requests
 _mock_db_instance = None
@@ -117,7 +124,10 @@ def get_database():
     # Use mock database for now due to SSL issues with MongoDB Atlas on Heroku
     print("Using mock database due to MongoDB Atlas SSL issues")
     if _mock_db_instance is None:
+        print("Creating new mock database instance")
         _mock_db_instance = MockDatabase()
+    else:
+        print(f"Reusing mock database with {len(_mock_db_instance.data['articles'])} articles")
     return _mock_db_instance
     
     # Original MongoDB code (commented out due to SSL issues)

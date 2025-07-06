@@ -187,14 +187,27 @@ async def update_article(article_id: str, article_data: dict, db=Depends(get_dat
 @app.delete("/api/articles/{article_id}")
 async def delete_article(article_id: str, db=Depends(get_database)):
     try:
-        from bson import ObjectId
-        result = db.articles.delete_one({"_id": ObjectId(article_id)})
+        print(f"Deleting article with ID: {article_id}")
+        
+        # Handle both MongoDB ObjectId and mock IDs
+        if article_id.startswith("mock_id_"):
+            # For mock database
+            print(f"Using mock database delete for ID: {article_id}")
+            result = db.articles.delete_one({"_id": article_id})
+        else:
+            # For real MongoDB
+            print(f"Using MongoDB delete for ID: {article_id}")
+            from bson import ObjectId
+            result = db.articles.delete_one({"_id": ObjectId(article_id)})
+        
+        print(f"Delete result: {result.deleted_count}")
         
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Article not found")
         
         return {"message": "Article deleted successfully"}
     except Exception as e:
+        print(f"Error deleting article {article_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/settings")
