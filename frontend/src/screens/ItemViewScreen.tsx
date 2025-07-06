@@ -62,6 +62,12 @@ const ItemViewScreen: React.FC = () => {
     editorRef.current?.focus();
   };
 
+  useEffect(() => {
+    if (isEditing && editorRef.current) {
+      editorRef.current.innerHTML = editedSummary;
+    }
+  }, [isEditing, editedSummary]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -224,7 +230,6 @@ const ItemViewScreen: React.FC = () => {
                       suppressContentEditableWarning={true}
                       className="min-h-[300px] p-4 border border-gray-300 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                       style={{ lineHeight: '1.7' }}
-                      dangerouslySetInnerHTML={{ __html: editedSummary }}
                       onBlur={() => {
                         if (editorRef.current) {
                           setEditedSummary(editorRef.current.innerHTML);
