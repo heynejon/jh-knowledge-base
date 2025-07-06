@@ -145,11 +145,10 @@ async def get_article(article_id: str, db=Depends(get_database)):
             article = db.articles.find_one({"_id": article_id})
             print(f"Mock database result: {article}")
         else:
-            # For real MongoDB
-            print(f"Using MongoDB ObjectId query for ID: {article_id}")
-            from bson import ObjectId
-            article = db.articles.find_one({"_id": ObjectId(article_id)})
-            print(f"MongoDB result: {article}")
+            # For PostgreSQL (numeric IDs)
+            print(f"Using PostgreSQL numeric ID query for ID: {article_id}")
+            article = db.articles.find_one({"_id": article_id})
+            print(f"PostgreSQL result: {article}")
             
         if not article:
             print(f"Article not found for ID: {article_id}")
@@ -181,11 +180,10 @@ async def update_article(article_id: str, article_data: dict, db=Depends(get_dat
                 {"$set": update_data}
             )
         else:
-            # For real MongoDB
-            print(f"Using MongoDB update for ID: {article_id}")
-            from bson import ObjectId
+            # For PostgreSQL
+            print(f"Using PostgreSQL update for ID: {article_id}")
             result = db.articles.update_one(
-                {"_id": ObjectId(article_id)},
+                {"_id": article_id},
                 {"$set": update_data}
             )
         
@@ -210,10 +208,9 @@ async def delete_article(article_id: str, db=Depends(get_database)):
             print(f"Using mock database delete for ID: {article_id}")
             result = db.articles.delete_one({"_id": article_id})
         else:
-            # For real MongoDB
-            print(f"Using MongoDB delete for ID: {article_id}")
-            from bson import ObjectId
-            result = db.articles.delete_one({"_id": ObjectId(article_id)})
+            # For PostgreSQL
+            print(f"Using PostgreSQL delete for ID: {article_id}")
+            result = db.articles.delete_one({"_id": article_id})
         
         print(f"Delete result: {result.deleted_count}")
         
