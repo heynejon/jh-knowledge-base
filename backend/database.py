@@ -134,9 +134,15 @@ def get_database():
     # Try MongoDB Atlas first
     try:
         print("Attempting MongoDB Atlas connection...")
+        print(f"Using MongoDB URL: {mongodb_url[:20]}...")  # Show first 20 chars for debugging
         
-        # Approach 1: Try with explicit CA file
+        # Ensure we have mongodb+srv:// format
+        if not mongodb_url.startswith('mongodb+srv://'):
+            print(f"WARNING: URL should use mongodb+srv:// format, got: {mongodb_url[:20]}...")
+        
+        # Approach 1: Use Atlas-recommended connection with CA file
         import certifi
+        print(f"Using CA file: {certifi.where()}")
         
         client = MongoClient(
             mongodb_url,

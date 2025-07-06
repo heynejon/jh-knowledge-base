@@ -285,6 +285,22 @@ async def test_mongo_connection():
     try:
         print("=== TESTING MONGODB CONNECTION ===")
         
+        # Check environment details first
+        import sys
+        import ssl
+        import certifi
+        import pymongo
+        
+        env_info = {
+            "python_version": sys.version,
+            "ssl_version": ssl.OPENSSL_VERSION,
+            "pymongo_version": pymongo.version,
+            "certifi_location": certifi.where(),
+            "mongodb_url_format": "mongodb+srv://" in os.getenv("MONGODB_URL", "")
+        }
+        
+        print(f"Environment info: {env_info}")
+        
         # Import here to test the connection logic
         from database import get_database
         db = get_database()
@@ -295,14 +311,16 @@ async def test_mongo_connection():
         return {
             "database_type": db_type,
             "connection_successful": True,
-            "message": f"Connected to {db_type}"
+            "message": f"Connected to {db_type}",
+            "environment": env_info
         }
     except Exception as e:
         print(f"MongoDB connection test failed: {str(e)}")
         return {
             "database_type": "Unknown",
             "connection_successful": False,
-            "error": str(e)
+            "error": str(e),
+            "environment": env_info if 'env_info' in locals() else {}
         }
 
 # Catch-all route for React Router (must be last)
