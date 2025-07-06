@@ -106,13 +106,19 @@ class MockCollection:
     def delete_one(self, query):
         return type('Result', (), {'deleted_count': 1})()
 
+# Global mock database instance to persist data across requests
+_mock_db_instance = None
+
 def get_database():
+    global _mock_db_instance
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
     database_name = os.getenv("DATABASE_NAME", "jh_knowledge_base")
     
     # Use mock database for now due to SSL issues with MongoDB Atlas on Heroku
     print("Using mock database due to MongoDB Atlas SSL issues")
-    return MockDatabase()
+    if _mock_db_instance is None:
+        _mock_db_instance = MockDatabase()
+    return _mock_db_instance
     
     # Original MongoDB code (commented out due to SSL issues)
     # try:
