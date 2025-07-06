@@ -130,18 +130,31 @@ def get_database():
     global _mock_db_instance
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/")
     database_name = os.getenv("DATABASE_NAME", "jh_knowledge_base")
+    quotaguard_url = os.getenv("QUOTAGUARDSTATIC_URL")
     
-    # Try MongoDB Atlas first - Use PyMongo 3.x compatible parameters
+    # Try MongoDB Atlas first - Use PyMongo 3.x compatible parameters with proxy
     try:
         print("Attempting MongoDB Atlas connection...")
         print(f"Using MongoDB URL: {mongodb_url[:20]}...")
         
+        # Configure proxy if available - use environment variables for socks proxy
+        if quotaguard_url:
+            print("Using QuotaGuard Static proxy for MongoDB connection")
+            from urllib.parse import urlparse
+            parsed_proxy = urlparse(quotaguard_url)
+            
+            # Set proxy environment variables for the connection
+            proxy_url = f"http://{parsed_proxy.username}:{parsed_proxy.password}@{parsed_proxy.hostname}:{parsed_proxy.port}"
+            os.environ['HTTP_PROXY'] = proxy_url
+            os.environ['HTTPS_PROXY'] = proxy_url
+            print(f"Proxy configured: {parsed_proxy.hostname}:{parsed_proxy.port}")
+        
         # PyMongo 3.x compatible parameters
         client = MongoClient(
             mongodb_url,
-            serverSelectionTimeoutMS=10000,
-            socketTimeoutMS=10000,
-            connectTimeoutMS=10000,
+            serverSelectionTimeoutMS=15000,
+            socketTimeoutMS=15000,
+            connectTimeoutMS=15000,
             ssl=True,
             ssl_cert_reqs='CERT_NONE',
             retryWrites=True
