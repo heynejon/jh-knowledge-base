@@ -27,7 +27,8 @@ const ItemViewScreen: React.FC = () => {
       setLoading(true);
       const data = await articleApi.getArticle(articleId);
       setArticle(data);
-      setEditedSummary(data.summary);
+      // Ensure summary is properly formatted for Quill
+      setEditedSummary(data.summary || '');
     } catch (error) {
       console.error('Error loading article:', error);
     } finally {
@@ -187,15 +188,21 @@ const ItemViewScreen: React.FC = () => {
                 {isEditing ? (
                   <div className="space-y-4">
                     <div className="border border-gray-300 rounded-md">
-                      <ReactQuill
-                        theme="snow"
-                        value={editedSummary}
-                        onChange={setEditedSummary}
-                        modules={quillModules}
-                        formats={quillFormats}
-                        placeholder="Edit the summary..."
-                        style={{ minHeight: '300px' }}
-                      />
+                      {typeof window !== 'undefined' ? (
+                        <ReactQuill
+                          theme="snow"
+                          value={editedSummary || ''}
+                          onChange={(value) => setEditedSummary(value || '')}
+                          modules={quillModules}
+                          formats={quillFormats}
+                          placeholder="Edit the summary..."
+                          style={{ minHeight: '300px' }}
+                        />
+                      ) : (
+                        <div className="p-4 text-center text-gray-500">
+                          Loading editor...
+                        </div>
+                      )}
                     </div>
                     <div className="flex space-x-2">
                       <button
