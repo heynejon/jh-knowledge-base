@@ -290,6 +290,7 @@ async def test_mongo_connection():
         import ssl
         import certifi
         import pymongo
+        import socket
         
         env_info = {
             "python_version": sys.version,
@@ -299,6 +300,43 @@ async def test_mongo_connection():
             "mongodb_url_format": "mongodb+srv://" in os.getenv("MONGODB_URL", "")
         }
         
+        # Test DNS resolution and basic connectivity
+        try:
+            # Extract hostname from MongoDB URL
+            mongodb_url = os.getenv("MONGODB_URL", "")
+            if "mongodb+srv://" in mongodb_url:
+                # Extract domain from mongodb+srv://user:pass@cluster.domain/db
+                domain = mongodb_url.split("@")[1].split("/")[0]
+                print(f"Testing DNS resolution for: {domain}")
+                
+                # Test DNS resolution
+                import dns.resolver
+                srv_records = dns.resolver.resolve(f"_mongodb._tcp.{domain}", 'SRV')
+                server_addresses = [str(srv.target).rstrip('.') for srv in srv_records]
+                print(f"DNS SRV records found: {server_addresses}")
+                
+                # Test basic TCP connectivity to first server
+                if server_addresses:
+                    first_server = server_addresses[0]
+                    port = 27017
+                    print(f"Testing TCP connection to {first_server}:{port}")
+                    
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(5)
+                    result = sock.connect_ex((first_server, port))
+                    sock.close()
+                    
+                    env_info["dns_resolution"] = "Success"
+                    env_info["tcp_connectivity"] = "Success" if result == 0 else f"Failed (code: {result})"
+                    env_info["server_addresses"] = server_addresses
+                else:
+                    env_info["dns_resolution"] = "No SRV records found"
+            else:
+                env_info["dns_resolution"] = "Not using mongodb+srv:// scheme"
+                
+        except Exception as dns_error:
+            env_info["dns_resolution"] = f"Failed: {str(dns_error)}"
+            
         print(f"Environment info: {env_info}")
         
         # Import here to test the connection logic
