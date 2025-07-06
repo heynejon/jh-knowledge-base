@@ -135,18 +135,14 @@ def get_database():
     try:
         print("Attempting MongoDB Atlas connection...")
         
-        # Create SSL context with relaxed verification
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        
         client = MongoClient(
             mongodb_url,
             serverSelectionTimeoutMS=15000,
             socketTimeoutMS=15000,
             connectTimeoutMS=15000,
             ssl=True,
-            ssl_context=ssl_context,
+            ssl_cert_reqs=ssl.CERT_NONE,
+            ssl_match_hostname=False,
             retryWrites=True,
             w='majority',
             maxPoolSize=10,
