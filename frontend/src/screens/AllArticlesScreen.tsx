@@ -150,7 +150,7 @@ const AllArticlesScreen: React.FC = () => {
                         <h3 className="text-base font-medium text-gray-900 mb-1 line-clamp-2">
                           {article.title}
                         </h3>
-                        <div className="flex items-center text-xs text-gray-500 space-x-3">
+                        <div className="flex items-center text-xs text-gray-500 space-x-3 no-underline">
                           <span>Source: {article.publication_name}</span>
                           <span>•</span>
                           <span>Added: {formatDate(article.date_added)}</span>

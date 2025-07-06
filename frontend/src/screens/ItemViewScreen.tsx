@@ -62,6 +62,22 @@ const ItemViewScreen: React.FC = () => {
     });
   };
 
+  const formatText = (text: string) => {
+    // Convert plain text to formatted HTML
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold: **text**
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic: *text*
+      .replace(/__(.*?)__/g, '<u>$1</u>') // Underline: __text__
+      .replace(/`(.*?)`/g, '<code>$1</code>') // Inline code: `text`
+      .replace(/^### (.*$)/gm, '<h3>$1</h3>') // H3: ### text
+      .replace(/^## (.*$)/gm, '<h2>$1</h2>') // H2: ## text
+      .replace(/^# (.*$)/gm, '<h1>$1</h1>') // H1: # text
+      .replace(/^- (.*$)/gm, '<li>$1</li>') // List items: - text
+      .replace(/(\n|^)(\d+\. .*?)(?=\n|$)/g, '$1<li>$2</li>') // Numbered lists
+      .replace(/\n\n/g, '</p><p>') // Paragraphs
+      .replace(/\n/g, '<br>'); // Line breaks
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -180,25 +196,23 @@ const ItemViewScreen: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="prose max-w-none text-gray-800 leading-relaxed">
-                    {article.summary.split('\n').map((paragraph, index) => (
-                      <p key={index} className="mb-4">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
+                  <div 
+                    className="formatted-text text-gray-800"
+                    dangerouslySetInnerHTML={{ 
+                      __html: `<p>${formatText(article.summary)}</p>` 
+                    }}
+                  />
                 )}
               </div>
             ) : (
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Full Article</h2>
-                <div className="prose max-w-none text-gray-800 leading-relaxed">
-                  {article.full_text.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
+                <div 
+                  className="formatted-text text-gray-800"
+                  dangerouslySetInnerHTML={{ 
+                    __html: `<p>${formatText(article.full_text)}</p>` 
+                  }}
+                />
               </div>
             )}
           </div>
