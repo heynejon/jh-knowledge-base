@@ -152,10 +152,16 @@ async def create_article(article_data: dict):
         # Handle duplicate URL specifically
         if str(e).startswith("DUPLICATE_URL:"):
             article_id = str(e).split(":")[1]
-            raise HTTPException(
-                status_code=409, 
-                detail=f"An article with this URL already exists in your knowledge base. View it here: /article/{article_id}"
-            )
+            if article_id == "unknown":
+                raise HTTPException(
+                    status_code=409, 
+                    detail="An article with this URL already exists in your knowledge base."
+                )
+            else:
+                raise HTTPException(
+                    status_code=409, 
+                    detail=f"An article with this URL already exists in your knowledge base. View it here: /article/{article_id}"
+                )
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @app.get("/api/articles/{article_id}")

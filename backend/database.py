@@ -143,10 +143,17 @@ class ArticleService:
             logger.error(f"Database error creating article: {str(e)}")
             # Check if it's a unique constraint violation
             if "unique constraint" in str(e).lower() or "duplicate key" in str(e).lower():
-                raise Exception("DUPLICATE_URL")
+                # Try to find the existing article for the URL
+                try:
+                    existing_article = db.query(Article).filter(Article.url == article_data["url"]).first()
+                    if existing_article:
+                        raise Exception(f"DUPLICATE_URL:{existing_article.id}")
+                except:
+                    pass
+                raise Exception("DUPLICATE_URL:unknown")
             raise Exception(f"Failed to create article: {str(e)}")
         except Exception as e:
-            if str(e) == "DUPLICATE_URL":
+            if str(e).startswith("DUPLICATE_URL:"):
                 raise
             logger.error(f"Unexpected error creating article: {str(e)}")
             raise Exception(f"Failed to create article: {str(e)}")
