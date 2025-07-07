@@ -1,24 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const ItemViewScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'summary' | 'full'>('summary');
   const [isEditing, setIsEditing] = useState(false);
   const [editedSummary, setEditedSummary] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Simple edit mode without any external dependencies
 
   useEffect(() => {
     if (id) {
       loadArticle(id);
     }
   }, [id]);
+
 
   const loadArticle = async (articleId: string) => {
     try {
@@ -138,10 +140,7 @@ const ItemViewScreen: React.FC = () => {
               </div>
               {viewMode === 'summary' && !isEditing && (
                 <button
-                  onClick={() => {
-                    console.log('Edit button clicked, setting isEditing to true');
-                    setIsEditing(true);
-                  }}
+                  onClick={() => setIsEditing(true)}
                   className="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
                 >
                   Edit
@@ -159,17 +158,63 @@ const ItemViewScreen: React.FC = () => {
                 </div>
                 
                 {isEditing ? (
-                  <div>
-                    <h3>EDIT MODE</h3>
-                    <button onClick={() => setIsEditing(false)}>Cancel</button>
+                  <div style={{marginTop: '16px'}}>
+                    <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px'}}>
+                      Edit Summary
+                    </label>
+                    <textarea
+                      value={editedSummary}
+                      onChange={(e) => setEditedSummary(e.target.value)}
+                      rows={10}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        lineHeight: '1.5',
+                        resize: 'vertical',
+                        outline: 'none'
+                      }}
+                      placeholder="Enter your summary here..."
+                    />
+                    <div style={{marginTop: '16px', display: 'flex', gap: '12px'}}>
+                      <button
+                        onClick={handleSaveSummary}
+                        disabled={isSaving}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: isSaving ? '#9CA3AF' : '#2563EB',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          cursor: isSaving ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {isSaving ? 'Saving...' : 'Save Summary'}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isSaving}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#E5E7EB',
+                          color: '#374151',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          cursor: isSaving ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div 
-                    className="formatted-text text-gray-800"
-                    dangerouslySetInnerHTML={{ 
-                      __html: article.summary
-                    }}
-                  />
+                  <div className="formatted-text text-gray-800 whitespace-pre-wrap">
+                    {article.summary}
+                  </div>
                 )}
               </div>
             ) : (

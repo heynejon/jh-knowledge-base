@@ -16,7 +16,7 @@ A personal knowledge base application for saving and summarizing online articles
 
 - Python 3.9+
 - Node.js 16+
-- MongoDB (local or MongoDB Atlas)
+- PostgreSQL database
 - OpenAI API Key
 
 ### Installation
@@ -47,8 +47,7 @@ A personal knowledge base application for saving and summarizing online articles
    Edit `.env` and add your configuration:
    ```
    OPENAI_API_KEY=your_openai_api_key
-   MONGODB_URL=your_mongodb_connection_string
-   DATABASE_NAME=jh_knowledge_base
+   DATABASE_URL=your_postgresql_connection_string
    PORT=8000
    ```
 
@@ -99,8 +98,7 @@ For development with hot reload:
 2. Set environment variables:
    ```bash
    heroku config:set OPENAI_API_KEY=your_key
-   heroku config:set MONGODB_URL=your_mongodb_atlas_url
-   heroku config:set DATABASE_NAME=jh_knowledge_base
+   heroku config:set DATABASE_URL=your_postgresql_url
    ```
 
 3. Deploy:
@@ -108,13 +106,11 @@ For development with hot reload:
    git push heroku main
    ```
 
-### MongoDB Atlas Setup
+### PostgreSQL Database Setup
 
-1. Create a MongoDB Atlas account
-2. Create a new cluster
-3. Create a database user
-4. Get the connection string
-5. Add it to your environment variables
+1. Create a PostgreSQL database (locally or hosted)
+2. Get the connection string (format: postgresql://user:password@host:port/database)
+3. Add it to your environment variables as DATABASE_URL
 
 ## Usage
 
@@ -130,7 +126,7 @@ For development with hot reload:
 
 - **Backend**: FastAPI, Python
 - **Frontend**: React, TypeScript, Tailwind CSS
-- **Database**: MongoDB
+- **Database**: PostgreSQL
 - **AI**: OpenAI GPT-4
 - **Web Scraping**: BeautifulSoup, requests
 - **Deployment**: Heroku

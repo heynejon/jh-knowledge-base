@@ -9,13 +9,18 @@ from datetime import datetime
 from typing import List, Optional
 import json
 
-from database import get_database
+from database import ArticleService, SettingsService, init_database
 from scraper import scrape_article
 from summarizer import summarize_text
 
 load_dotenv()
 
 app = FastAPI(title="JH Knowledge Base", version="1.0.0")
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    init_database()
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,46 +44,62 @@ async def read_root():
         return FileResponse("../frontend/build/index.html")
     return {"message": "JH Knowledge Base API"}
 
+@app.get("/manifest.json")
+async def get_manifest():
+    if os.path.exists("static_frontend/manifest.json"):
+        return FileResponse("static_frontend/manifest.json", media_type="application/json")
+    elif os.path.exists("../frontend/build/manifest.json"):
+        return FileResponse("../frontend/build/manifest.json", media_type="application/json")
+    return {"error": "Manifest not found"}
+
+@app.get("/favicon.ico")
+async def get_favicon():
+    if os.path.exists("static_frontend/favicon.ico"):
+        return FileResponse("static_frontend/favicon.ico")
+    elif os.path.exists("../frontend/build/favicon.ico"):
+        return FileResponse("../frontend/build/favicon.ico")
+    return {"error": "Favicon not found"}
+
+@app.get("/logo192.png")
+async def get_logo192():
+    if os.path.exists("static_frontend/logo192.png"):
+        return FileResponse("static_frontend/logo192.png")
+    elif os.path.exists("../frontend/build/logo192.png"):
+        return FileResponse("../frontend/build/logo192.png")
+    return {"error": "Logo not found"}
+
+@app.get("/logo512.png")
+async def get_logo512():
+    if os.path.exists("static_frontend/logo512.png"):
+        return FileResponse("static_frontend/logo512.png")
+    elif os.path.exists("../frontend/build/logo512.png"):
+        return FileResponse("../frontend/build/logo512.png")
+    return {"error": "Logo not found"}
+
+@app.get("/robots.txt")
+async def get_robots():
+    if os.path.exists("static_frontend/robots.txt"):
+        return FileResponse("static_frontend/robots.txt")
+    elif os.path.exists("../frontend/build/robots.txt"):
+        return FileResponse("../frontend/build/robots.txt")
+    return {"error": "Robots.txt not found"}
+
 @app.get("/api/articles")
-async def get_articles(search: Optional[str] = None, db=Depends(get_database)):
+async def get_articles(search: Optional[str] = None):
     try:
-        query = {}
-        if search:
-            query = {
-                "$or": [
-                    {"title": {"$regex": search, "$options": "i"}},
-                    {"full_text": {"$regex": search, "$options": "i"}},
-                    {"summary": {"$regex": search, "$options": "i"}},
-                    {"publication_name": {"$regex": search, "$options": "i"}}
-                ]
-            }
-        
-        articles = list(db.articles.find(query).sort("date_added", -1))
-        
-        # Convert ObjectId to string for JSON serialization
-        for article in articles:
-            article["_id"] = str(article["_id"])
-            
+        articles = ArticleService.get_articles(search=search)
         return articles
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/articles")
-async def create_article(article_data: dict, db=Depends(get_database)):
+async def create_article(article_data: dict):
     try:
         url = article_data.get("url")
         if not url:
             raise HTTPException(status_code=400, detail="URL is required")
         
         print(f"Starting article creation for URL: {url}")
-        
-        # Test database connection first
-        try:
-            db.articles.find_one()
-            print("Database connection successful")
-        except Exception as db_error:
-            print(f"Database connection failed: {str(db_error)}")
-            raise HTTPException(status_code=500, detail=f"Database connection failed: {str(db_error)}")
         
         # Scrape the article
         print("Starting web scraping...")
@@ -91,8 +112,9 @@ async def create_article(article_data: dict, db=Depends(get_database)):
         
         # Get summarization prompt from settings
         print("Getting settings...")
-        settings = db.settings.find_one({"key": "summarization_prompt"})
-        prompt = settings["value"] if settings else "Summarize the following article in a clear, concise manner:"
+        prompt = SettingsService.get_setting("summarization_prompt")
+        if not prompt:
+            prompt = "Summarize the following article in a clear, concise manner:"
         
         # Generate summary
         print("Starting AI summarization...")
@@ -105,7 +127,7 @@ async def create_article(article_data: dict, db=Depends(get_database)):
         
         # Create article object
         print("Creating article object...")
-        article_data = {
+        create_data = {
             "title": scraped_data["title"],
             "publication_name": scraped_data["publication_name"],
             "full_text": scraped_data["full_text"],
@@ -118,11 +140,10 @@ async def create_article(article_data: dict, db=Depends(get_database)):
         
         # Insert into database
         print("Saving to database...")
-        result = db.articles.insert_one(article_data)
-        article_data["_id"] = str(result.inserted_id)
+        article = ArticleService.create_article(create_data)
         
         print("Article creation completed successfully")
-        return article_data
+        return article
     except HTTPException:
         raise
     except Exception as e:
@@ -130,31 +151,16 @@ async def create_article(article_data: dict, db=Depends(get_database)):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @app.get("/api/articles/{article_id}")
-async def get_article(article_id: str, db=Depends(get_database)):
+async def get_article(article_id: str):
     try:
         print(f"Getting article with ID: {article_id}")
         
-        # Debug: Check what articles exist in the database
-        all_articles = list(db.articles.find())
-        print(f"Available articles: {[art.get('_id') for art in all_articles]}")
+        article = ArticleService.get_article_by_id(article_id)
         
-        # Handle both MongoDB ObjectId and mock IDs
-        if article_id.startswith("mock_id_"):
-            # For mock database
-            print(f"Using mock database query for ID: {article_id}")
-            article = db.articles.find_one({"_id": article_id})
-            print(f"Mock database result: {article}")
-        else:
-            # For PostgreSQL (numeric IDs)
-            print(f"Using PostgreSQL numeric ID query for ID: {article_id}")
-            article = db.articles.find_one({"_id": article_id})
-            print(f"PostgreSQL result: {article}")
-            
         if not article:
             print(f"Article not found for ID: {article_id}")
             raise HTTPException(status_code=404, detail="Article not found")
         
-        article["_id"] = str(article["_id"])
         print(f"Returning article: {article.get('title', 'No title')}")
         return article
     except Exception as e:
@@ -162,7 +168,7 @@ async def get_article(article_id: str, db=Depends(get_database)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/articles/{article_id}")
-async def update_article(article_id: str, article_data: dict, db=Depends(get_database)):
+async def update_article(article_id: str, article_data: dict):
     try:
         print(f"Updating article with ID: {article_id}")
         print(f"Update data: {article_data}")
@@ -171,25 +177,9 @@ async def update_article(article_id: str, article_data: dict, db=Depends(get_dat
         if "summary" in article_data:
             update_data["summary"] = article_data["summary"]
         
-        # Handle both MongoDB ObjectId and mock IDs
-        if article_id.startswith("mock_id_"):
-            # For mock database
-            print(f"Using mock database update for ID: {article_id}")
-            result = db.articles.update_one(
-                {"_id": article_id},
-                {"$set": update_data}
-            )
-        else:
-            # For PostgreSQL
-            print(f"Using PostgreSQL update for ID: {article_id}")
-            result = db.articles.update_one(
-                {"_id": article_id},
-                {"$set": update_data}
-            )
+        success = ArticleService.update_article(article_id, update_data)
         
-        print(f"Update result: {result.matched_count}")
-        
-        if result.matched_count == 0:
+        if not success:
             raise HTTPException(status_code=404, detail="Article not found")
         
         return {"message": "Article updated successfully"}
@@ -198,23 +188,13 @@ async def update_article(article_id: str, article_data: dict, db=Depends(get_dat
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/articles/{article_id}")
-async def delete_article(article_id: str, db=Depends(get_database)):
+async def delete_article(article_id: str):
     try:
         print(f"Deleting article with ID: {article_id}")
         
-        # Handle both MongoDB ObjectId and mock IDs
-        if article_id.startswith("mock_id_"):
-            # For mock database
-            print(f"Using mock database delete for ID: {article_id}")
-            result = db.articles.delete_one({"_id": article_id})
-        else:
-            # For PostgreSQL
-            print(f"Using PostgreSQL delete for ID: {article_id}")
-            result = db.articles.delete_one({"_id": article_id})
+        success = ArticleService.delete_article(article_id)
         
-        print(f"Delete result: {result.deleted_count}")
-        
-        if result.deleted_count == 0:
+        if not success:
             raise HTTPException(status_code=404, detail="Article not found")
         
         return {"message": "Article deleted successfully"}
@@ -223,47 +203,39 @@ async def delete_article(article_id: str, db=Depends(get_database)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/settings")
-async def get_settings(db=Depends(get_database)):
+async def get_settings():
     try:
-        settings = db.settings.find_one({"key": "summarization_prompt"})
-        if not settings:
+        prompt = SettingsService.get_setting("summarization_prompt")
+        if not prompt:
             # Create default settings
             default_prompt = "Summarize the following article in a clear, concise manner:"
-            db.settings.insert_one({"key": "summarization_prompt", "value": default_prompt})
+            SettingsService.set_setting("summarization_prompt", default_prompt)
             return {"summarization_prompt": default_prompt}
         
-        return {"summarization_prompt": settings["value"]}
+        return {"summarization_prompt": prompt}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/settings")
-async def update_settings(settings_data: dict, db=Depends(get_database)):
+async def update_settings(settings_data: dict):
     try:
         prompt = settings_data.get("summarization_prompt")
         if not prompt:
             raise HTTPException(status_code=400, detail="Summarization prompt is required")
         
-        db.settings.update_one(
-            {"key": "summarization_prompt"},
-            {"$set": {"value": prompt}},
-            upsert=True
-        )
+        success = SettingsService.set_setting("summarization_prompt", prompt)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update settings")
         
         return {"message": "Settings updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/export")
-async def export_articles(db=Depends(get_database)):
+async def export_articles():
     try:
-        articles = list(db.articles.find())
-        
-        # Convert ObjectId to string for JSON serialization
-        for article in articles:
-            article["_id"] = str(article["_id"])
-            article["date_added"] = article["date_added"].isoformat()
-            article["created_at"] = article["created_at"].isoformat()
-            article["updated_at"] = article["updated_at"].isoformat()
+        articles = ArticleService.get_articles(limit=1000)  # Get all articles
         
         export_data = {
             "export_date": datetime.now().isoformat(),
@@ -275,126 +247,31 @@ async def export_articles(db=Depends(get_database)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/test-mongo")
-async def test_mongo_connection():
-    """Test endpoint to force MongoDB connection attempt"""
+@app.get("/api/test-database")
+async def test_database_connection():
+    """Test endpoint to verify database functionality"""
     try:
-        print("=== TESTING MONGODB CONNECTION ===")
+        print("=== TESTING DATABASE CONNECTION ===")
         
-        # Check environment details first
-        import sys
-        import ssl
-        import certifi
-        import pymongo
-        import socket
+        # Test basic database operations
+        articles = ArticleService.get_articles()
+        settings = SettingsService.get_setting("summarization_prompt")
         
-        env_info = {
-            "python_version": sys.version,
-            "ssl_version": ssl.OPENSSL_VERSION,
-            "pymongo_version": pymongo.version,
-            "certifi_location": certifi.where(),
-            "mongodb_url_format": "mongodb+srv://" in os.getenv("MONGODB_URL", ""),
-            "tls_versions_supported": [v.name for v in ssl.TLSVersion]
-        }
-        
-        # Test DNS resolution and basic connectivity
-        try:
-            # Extract hostname from MongoDB URL
-            mongodb_url = os.getenv("MONGODB_URL", "")
-            if "mongodb+srv://" in mongodb_url:
-                # Extract domain from mongodb+srv://user:pass@cluster.domain/db
-                domain = mongodb_url.split("@")[1].split("/")[0]
-                print(f"Testing DNS resolution for: {domain}")
-                
-                # Test DNS resolution
-                import dns.resolver
-                srv_records = dns.resolver.resolve(f"_mongodb._tcp.{domain}", 'SRV')
-                server_addresses = [str(srv.target).rstrip('.') for srv in srv_records]
-                print(f"DNS SRV records found: {server_addresses}")
-                
-                # Test basic TCP connectivity to first server
-                if server_addresses:
-                    first_server = server_addresses[0]
-                    port = 27017
-                    print(f"Testing TCP connection to {first_server}:{port}")
-                    
-                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sock.settimeout(5)
-                    result = sock.connect_ex((first_server, port))
-                    sock.close()
-                    
-                    env_info["dns_resolution"] = "Success"
-                    env_info["tcp_connectivity"] = "Success" if result == 0 else f"Failed (code: {result})"
-                    env_info["server_addresses"] = server_addresses
-                else:
-                    env_info["dns_resolution"] = "No SRV records found"
-            else:
-                env_info["dns_resolution"] = "Not using mongodb+srv:// scheme"
-                
-        except Exception as dns_error:
-            env_info["dns_resolution"] = f"Failed: {str(dns_error)}"
-            
-        print(f"Environment info: {env_info}")
-        
-        # Import here to test the connection logic
-        from database import get_database
-        db = get_database()
-        
-        # Check what type of database we got
-        db_type = "MongoDB" if hasattr(db, 'client') else "Mock Database"
-        
-        # Test TLS 1.3 support on Heroku
-        tls_test_results = {}
-        try:
-            mongodb_url = os.getenv("MONGODB_URL", "")
-            if mongodb_url and "mongodb+srv://" in mongodb_url:
-                domain = mongodb_url.split("@")[1].split("/")[0]
-                
-                # Test TLS 1.3 specifically
-                try:
-                    import dns.resolver
-                    srv_records = dns.resolver.resolve(f"_mongodb._tcp.{domain}", 'SRV')
-                    server_addresses = [str(srv.target).rstrip('.') for srv in srv_records]
-                    
-                    if server_addresses and hasattr(ssl, 'TLSVersion') and hasattr(ssl.TLSVersion, 'TLSv1_3'):
-                        server = server_addresses[0]
-                        
-                        # Test TLS 1.3
-                        context = ssl.create_default_context()
-                        context.minimum_version = ssl.TLSVersion.TLSv1_3
-                        context.maximum_version = ssl.TLSVersion.TLSv1_3
-                        context.check_hostname = False
-                        context.verify_mode = ssl.CERT_NONE
-                        
-                        test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        test_sock.settimeout(5)
-                        
-                        with context.wrap_socket(test_sock, server_hostname=server) as ssock:
-                            ssock.connect((server, 27017))
-                            tls_test_results["tls_1_3_test"] = {
-                                "status": "SUCCESS",
-                                "version": ssock.version(),
-                                "cipher": ssock.cipher()[0] if ssock.cipher() else "Unknown"
-                            }
-                except Exception as tls_error:
-                    tls_test_results["tls_1_3_test"] = {"status": "FAILED", "error": str(tls_error)}
-        except Exception as test_error:
-            tls_test_results["tls_test_error"] = str(test_error)
-
         return {
-            "database_type": db_type,
+            "database_type": "PostgreSQL",
             "connection_successful": True,
-            "message": f"Connected to {db_type}",
-            "environment": env_info,
-            "tls_tests": tls_test_results
+            "message": "Database is ready",
+            "stats": {
+                "total_articles": len(articles),
+                "settings_available": settings is not None
+            }
         }
     except Exception as e:
-        print(f"MongoDB connection test failed: {str(e)}")
+        print(f"Database test failed: {str(e)}")
         return {
-            "database_type": "Unknown",
+            "database_type": "PostgreSQL",
             "connection_successful": False,
-            "error": str(e),
-            "environment": env_info if 'env_info' in locals() else {}
+            "error": str(e)
         }
 
 # Catch-all route for React Router (must be last)

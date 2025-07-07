@@ -105,10 +105,6 @@ def get_db_session():
     finally:
         db.close()
 
-def get_database():
-    """Get database session for dependency injection"""
-    return get_db_session()
-
 # Article operations
 class ArticleService:
     """Service class for article operations"""
@@ -299,103 +295,15 @@ class SettingsService:
             logger.error(f"Unexpected error getting all settings: {str(e)}")
             return {}
 
-# Legacy compatibility classes (to match the old API)
-class LegacyDatabase:
-    """Legacy compatibility wrapper for the old MongoDB-style API"""
-    
-    def __init__(self):
-        self.articles = LegacyArticleCollection()
-        self.settings = LegacySettingCollection()
-
-class LegacyArticleCollection:
-    """Legacy collection wrapper for articles"""
-    
-    def find(self, query=None):
-        """Find articles with optional query"""
-        if query and "$or" in query:
-            # Extract search term from MongoDB-style query
-            search_term = ""
-            for condition in query["$or"]:
-                for field, regex_obj in condition.items():
-                    if isinstance(regex_obj, dict) and "$regex" in regex_obj:
-                        search_term = regex_obj["$regex"]
-                        break
-            return LegacyCursor(ArticleService.get_articles(search=search_term))
-        else:
-            return LegacyCursor(ArticleService.get_articles())
-    
-    def find_one(self, query=None):
-        """Find one article"""
-        if query and "_id" in query:
-            return ArticleService.get_article_by_id(str(query["_id"]))
-        return None
-    
-    def insert_one(self, doc):
-        """Insert one article"""
-        result = ArticleService.create_article(doc)
-        return type('Result', (), {'inserted_id': result["id"]})()
-    
-    def update_one(self, query, update):
-        """Update one article"""
-        if query and "_id" in query and "$set" in update:
-            success = ArticleService.update_article(str(query["_id"]), update["$set"])
-            return type('Result', (), {'matched_count': 1 if success else 0})()
-        return type('Result', (), {'matched_count': 0})()
-    
-    def delete_one(self, query):
-        """Delete one article"""
-        if query and "_id" in query:
-            success = ArticleService.delete_article(str(query["_id"]))
-            return type('Result', (), {'deleted_count': 1 if success else 0})()
-        return type('Result', (), {'deleted_count': 0})()
-
-class LegacySettingCollection:
-    """Legacy collection wrapper for settings"""
-    
-    def find_one(self, query=None):
-        """Find one setting"""
-        if query and "key" in query:
-            value = SettingsService.get_setting(query["key"])
-            return {"key": query["key"], "value": value} if value else None
-        return None
-    
-    def insert_one(self, doc):
-        """Insert one setting"""
-        success = SettingsService.set_setting(doc["key"], doc["value"])
-        return type('Result', (), {'inserted_id': doc["key"] if success else None})()
-    
-    def update_one(self, query, update, upsert=False):
-        """Update one setting"""
-        if query and "key" in query and "$set" in update:
-            success = SettingsService.set_setting(query["key"], update["$set"]["value"])
-            return type('Result', (), {'matched_count': 1 if success else 0})()
-        return type('Result', (), {'matched_count': 0})()
-
-class LegacyCursor:
-    """Legacy cursor wrapper"""
-    
-    def __init__(self, data):
-        self.data = data
-    
-    def sort(self, field, direction=-1):
-        """Sort results (already sorted by date in ArticleService)"""
-        return self
-    
-    def __iter__(self):
-        return iter(self.data)
-    
-    def __list__(self):
-        return list(self.data)
-
 # Initialize database on import
-def get_database_legacy():
-    """Get database instance with legacy MongoDB-style API"""
+def get_database():
+    """Get database services"""
     if not engine:
         if not init_database():
             logger.error("Failed to initialize database")
             return None
     
-    return LegacyDatabase()
-
-# For backwards compatibility
-get_database = get_database_legacy
+    return {
+        'articles': ArticleService,
+        'settings': SettingsService
+    }
