@@ -88,10 +88,11 @@ const AllArticlesScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header showSettingsButton={true} />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      <div className="min-h-screen bg-gray-50">
+        <Header showSettingsButton={true} />
+        
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Add New Article Section */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Article</h2>
@@ -198,16 +199,17 @@ const AllArticlesScreen: React.FC = () => {
             </div>
           )}
         </div>
+        </div>
       </div>
 
-      {/* Duplicate URL Modal */}
+      {/* Duplicate URL Modal - Rendered outside main container for proper overlay */}
       <DuplicateUrlModal
         isOpen={duplicateModal.isOpen}
         onClose={handleCloseDuplicateModal}
         onViewExisting={handleViewExistingArticle}
         articleId={duplicateModal.articleId}
       />
-    </div>
+    </>
   );
 };
 
