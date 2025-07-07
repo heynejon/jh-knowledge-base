@@ -45,6 +45,7 @@ async def read_root():
     return {"message": "JH Knowledge Base API"}
 
 @app.get("/manifest.json")
+@app.head("/manifest.json")
 async def get_manifest():
     if os.path.exists("static_frontend/manifest.json"):
         return FileResponse("static_frontend/manifest.json", media_type="application/json")
