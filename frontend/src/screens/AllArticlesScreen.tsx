@@ -45,20 +45,27 @@ const AllArticlesScreen: React.FC = () => {
       navigate(`/new-item?id=${article._id}`);
     } catch (error: any) {
       console.error('Error creating article:', error);
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response status:', error.response?.status);
       
       // Check if it's a duplicate URL error (409 Conflict)
       if (error.response?.status === 409) {
         const errorMessage = error.response?.data?.detail || 'An article with this URL already exists.';
+        console.log('Duplicate URL detected. Error message:', errorMessage);
         
         // Check if the error message contains a link to the existing article
         if (errorMessage.includes('/article/')) {
           const linkMatch = errorMessage.match(/\/article\/(\d+)/);
+          console.log('Article link match:', linkMatch);
           if (linkMatch) {
             const articleId = linkMatch[1];
+            console.log('Setting duplicate modal with article ID:', articleId);
             setDuplicateModal({isOpen: true, articleId});
             return;
           }
         } else {
+          console.log('No article link found, showing alert');
           alert(errorMessage);
         }
       } else {
