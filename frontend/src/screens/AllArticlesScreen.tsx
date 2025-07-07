@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
+import DuplicateUrlModal from '../components/DuplicateUrlModal';
 
 const AllArticlesScreen: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -10,6 +11,7 @@ const AllArticlesScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [duplicateModal, setDuplicateModal] = useState<{isOpen: boolean, articleId: string}>({isOpen: false, articleId: ''});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,13 +55,8 @@ const AllArticlesScreen: React.FC = () => {
           const linkMatch = errorMessage.match(/\/article\/(\d+)/);
           if (linkMatch) {
             const articleId = linkMatch[1];
-            const userWantsToView = window.confirm(
-              `An article with this URL already exists in your knowledge base. Would you like to view the existing article?`
-            );
-            if (userWantsToView) {
-              navigate(`/article/${articleId}`);
-              return;
-            }
+            setDuplicateModal({isOpen: true, articleId});
+            return;
           }
         } else {
           alert(errorMessage);
@@ -78,6 +75,16 @@ const AllArticlesScreen: React.FC = () => {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const handleViewExistingArticle = () => {
+    setDuplicateModal({isOpen: false, articleId: ''});
+    navigate(`/article/${duplicateModal.articleId}`);
+    setNewUrl(''); // Clear the URL input
+  };
+
+  const handleCloseDuplicateModal = () => {
+    setDuplicateModal({isOpen: false, articleId: ''});
   };
 
   return (
@@ -192,6 +199,14 @@ const AllArticlesScreen: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Duplicate URL Modal */}
+      <DuplicateUrlModal
+        isOpen={duplicateModal.isOpen}
+        onClose={handleCloseDuplicateModal}
+        onViewExisting={handleViewExistingArticle}
+        articleId={duplicateModal.articleId}
+      />
     </div>
   );
 };
