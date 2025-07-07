@@ -114,6 +114,12 @@ class ArticleService:
         """Create a new article"""
         try:
             with get_db_session() as db:
+                # Check if article with this URL already exists
+                existing_article = db.query(Article).filter(Article.url == article_data["url"]).first()
+                if existing_article:
+                    logger.info(f"Article with URL already exists: {article_data['url']}")
+                    raise Exception("DUPLICATE_URL")
+                
                 # Create article with current timestamp
                 article = Article(
                     title=article_data["title"],
@@ -135,8 +141,13 @@ class ArticleService:
                 
         except SQLAlchemyError as e:
             logger.error(f"Database error creating article: {str(e)}")
+            # Check if it's a unique constraint violation
+            if "unique constraint" in str(e).lower() or "duplicate key" in str(e).lower():
+                raise Exception("DUPLICATE_URL")
             raise Exception(f"Failed to create article: {str(e)}")
         except Exception as e:
+            if str(e) == "DUPLICATE_URL":
+                raise
             logger.error(f"Unexpected error creating article: {str(e)}")
             raise Exception(f"Failed to create article: {str(e)}")
     
