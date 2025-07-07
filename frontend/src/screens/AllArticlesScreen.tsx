@@ -14,6 +14,8 @@ const AllArticlesScreen: React.FC = () => {
   const [duplicateModal, setDuplicateModal] = useState<{isOpen: boolean, articleId: string}>({isOpen: false, articleId: ''});
   const navigate = useNavigate();
 
+  console.log('AllArticlesScreen render, duplicateModal state:', duplicateModal);
+
   useEffect(() => {
     loadArticles();
   }, []);

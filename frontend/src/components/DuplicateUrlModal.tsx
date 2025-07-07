@@ -13,6 +13,8 @@ const DuplicateUrlModal: React.FC<DuplicateUrlModalProps> = ({
   onViewExisting,
   articleId
 }) => {
+  console.log('DuplicateUrlModal render:', { isOpen, articleId });
+  
   // Handle escape key press
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
