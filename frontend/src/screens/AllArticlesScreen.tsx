@@ -53,22 +53,29 @@ const AllArticlesScreen: React.FC = () => {
       
       // Check if it's a duplicate URL error (409 Conflict)
       if (error.response?.status === 409) {
-        const errorMessage = error.response?.data?.detail || 'An article with this URL already exists.';
-        console.log('Duplicate URL detected. Error message:', errorMessage);
-        
-        // Check if the error message contains a link to the existing article
-        if (errorMessage.includes('/article/')) {
-          const linkMatch = errorMessage.match(/\/article\/(\d+)/);
-          console.log('Article link match:', linkMatch);
-          if (linkMatch) {
-            const articleId = linkMatch[1];
-            console.log('Setting duplicate modal with article ID:', articleId);
-            setDuplicateModal({isOpen: true, articleId});
-            return;
+        try {
+          const errorMessage = error.response?.data?.detail || 'An article with this URL already exists.';
+          console.log('Duplicate URL detected. Error message:', errorMessage);
+          
+          // Check if the error message contains a link to the existing article
+          if (errorMessage.includes('/article/')) {
+            const linkMatch = errorMessage.match(/\/article\/(\d+)/);
+            console.log('Article link match:', linkMatch);
+            if (linkMatch) {
+              const articleId = linkMatch[1];
+              console.log('Setting duplicate modal with article ID:', articleId);
+              console.log('Current modal state before update:', duplicateModal);
+              setDuplicateModal({isOpen: true, articleId});
+              console.log('Modal state update called');
+              return;
+            }
+          } else {
+            console.log('No article link found, showing alert');
+            alert(errorMessage);
           }
-        } else {
-          console.log('No article link found, showing alert');
-          alert(errorMessage);
+        } catch (modalError) {
+          console.error('Error in modal logic:', modalError);
+          alert('An article with this URL already exists in your knowledge base.');
         }
       } else {
         alert('Failed to create article. Please check the URL and try again.');
