@@ -118,7 +118,7 @@ class ArticleService:
                 existing_article = db.query(Article).filter(Article.url == article_data["url"]).first()
                 if existing_article:
                     logger.info(f"Article with URL already exists: {article_data['url']}")
-                    raise Exception("DUPLICATE_URL")
+                    raise Exception(f"DUPLICATE_URL:{existing_article.id}")
                 
                 # Create article with current timestamp
                 article = Article(
