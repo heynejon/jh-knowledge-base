@@ -131,21 +131,21 @@ const ItemViewScreen: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <Header showBackButton={true} title={article.title} />
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Article Metadata */}
-        <Card className="mb-6">
-          <h1 className="text-h1 font-heading text-gray-900 mb-4">
+        <Card className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-h1 font-heading text-gray-900 mb-4">
             {article.title}
           </h1>
           
-          <div className="flex flex-wrap items-center gap-4 text-body-sm text-gray-500 mb-6">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4 text-body-sm text-gray-500 mb-6">
             <div className="flex items-center gap-1">
               <GlobeIcon className="w-4 h-4" />
-              <span>{article.publication_name}</span>
+              <span className="text-xs sm:text-sm">{article.publication_name}</span>
             </div>
             <div className="flex items-center gap-1">
               <CalendarIcon className="w-4 h-4" />
-              <span>Added {formatDate(article.date_added)}</span>
+              <span className="text-xs sm:text-sm">Added {formatDate(article.date_added)}</span>
             </div>
             <a
               href={article.url}
@@ -154,17 +154,18 @@ const ItemViewScreen: React.FC = () => {
               className="flex items-center gap-1 text-primary-600 hover:text-primary-700 transition-colors"
             >
               <ExternalLinkIcon className="w-4 h-4" />
-              <span>View Original</span>
+              <span className="text-xs sm:text-sm">View Original</span>
             </a>
           </div>
           
           {/* View Toggle with Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-2 w-full">
               <Button
                 variant={viewMode === 'summary' ? 'primary' : 'secondary'}
                 size="sm"
                 onClick={() => setViewMode('summary')}
+                className="flex-1 sm:flex-none"
               >
                 Summary
               </Button>
@@ -172,18 +173,20 @@ const ItemViewScreen: React.FC = () => {
                 variant={viewMode === 'full' ? 'primary' : 'secondary'}
                 size="sm"
                 onClick={() => setViewMode('full')}
+                className="flex-1 sm:flex-none"
               >
                 Full Article
               </Button>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               {viewMode === 'summary' && !isEditing && (
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={() => setIsEditing(true)}
                   leftIcon={<EditIcon />}
+                  className="w-full sm:w-auto"
                 >
                   Edit Summary
                 </Button>
@@ -194,6 +197,7 @@ const ItemViewScreen: React.FC = () => {
                   size="sm"
                   onClick={handleDeleteClick}
                   leftIcon={<TrashIcon />}
+                  className="w-full sm:w-auto"
                 >
                   Delete
                 </Button>

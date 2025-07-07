@@ -85,24 +85,24 @@ const SettingsScreen: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <Header title="Settings" showBackButton={true} />
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Page Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
               <SettingsIcon className="w-5 h-5 text-primary-600" />
             </div>
-            <h1 className="text-h1 font-heading text-gray-900">Settings</h1>
+            <h1 className="text-xl sm:text-h1 font-heading text-gray-900">Settings</h1>
           </div>
-          <p className="text-body-lg text-gray-600">
+          <p className="text-body sm:text-body-lg text-gray-600">
             Customize your knowledge base preferences and export your data
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* AI Summarization Settings */}
           <Card>
-            <h2 className="text-h2 font-semibold text-gray-900 mb-4">AI Summarization</h2>
+            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">AI Summarization</h2>
             <p className="text-body text-gray-600 mb-6">
               Customize the prompt used to generate summaries for all new articles. 
               This helps you get summaries in the style and format you prefer.
@@ -119,12 +119,14 @@ const SettingsScreen: React.FC = () => {
                 required
               />
               
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   type="submit"
                   disabled={isSaving}
                   isLoading={isSaving}
                   variant="primary"
+                  className="w-full sm:w-auto"
+                  size="sm"
                 >
                   {isSaving ? 'Saving Settings...' : 'Save Settings'}
                 </Button>
@@ -132,6 +134,8 @@ const SettingsScreen: React.FC = () => {
                   type="button"
                   onClick={resetToDefault}
                   variant="secondary"
+                  className="w-full sm:w-auto"
+                  size="sm"
                 >
                   Reset to Default
                 </Button>
@@ -141,7 +145,7 @@ const SettingsScreen: React.FC = () => {
 
           {/* Data Management */}
           <Card>
-            <h2 className="text-h2 font-semibold text-gray-900 mb-4">Data Management</h2>
+            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">Data Management</h2>
             <p className="text-body text-gray-600 mb-6">
               Export your knowledge base for backup or migration purposes.
             </p>
@@ -150,6 +154,8 @@ const SettingsScreen: React.FC = () => {
               onClick={handleExportData}
               variant="secondary"
               leftIcon={<ExternalLinkIcon />}
+              className="w-full sm:w-auto"
+              size="sm"
             >
               Export All Data as JSON
             </Button>
@@ -157,12 +163,12 @@ const SettingsScreen: React.FC = () => {
 
           {/* Sample Prompts */}
           <Card>
-            <h2 className="text-h2 font-semibold text-gray-900 mb-4">Prompt Templates</h2>
+            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">Prompt Templates</h2>
             <p className="text-body text-gray-600 mb-6">
               Get started with these proven prompt templates, or use them as inspiration for your own custom prompts.
             </p>
             
-            <div className="grid gap-4">
+            <div className="grid gap-3 sm:gap-4">
               {[
                 {
                   title: "Brief Summary",
@@ -181,9 +187,9 @@ const SettingsScreen: React.FC = () => {
                 }
               ].map((template, index) => (
                 <Card key={index} padding="sm" className="border border-gray-200">
-                  <div className="flex justify-between items-start gap-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
                     <div className="flex-1">
-                      <h3 className="text-body-lg font-semibold text-gray-900 mb-1">{template.title}</h3>
+                      <h3 className="text-body sm:text-body-lg font-semibold text-gray-900 mb-1">{template.title}</h3>
                       <p className="text-body-sm text-gray-500 mb-3">{template.description}</p>
                       <p className="text-body text-gray-700 italic">"{template.prompt}"</p>
                     </div>
@@ -191,7 +197,7 @@ const SettingsScreen: React.FC = () => {
                       size="sm"
                       variant="ghost"
                       onClick={() => setEditedPrompt(template.prompt)}
-                      className="flex-shrink-0"
+                      className="w-full sm:w-auto sm:flex-shrink-0"
                     >
                       Use Template
                     </Button>
