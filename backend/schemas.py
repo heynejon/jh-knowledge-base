@@ -57,29 +57,7 @@ class SettingResponse(SettingBase):
     class Config:
         from_attributes = True
 
-# User schemas (for future authentication)
-class UserBase(BaseModel):
-    email: str
-
-class UserCreate(UserBase):
-    password: str
-    profile: Optional[Dict[str, Any]] = None
-
-class UserUpdate(BaseModel):
-    email: Optional[str] = None
-    password: Optional[str] = None
-    is_active: Optional[bool] = None
-    profile: Optional[Dict[str, Any]] = None
-
-class UserResponse(UserBase):
-    id: int
-    is_active: bool
-    profile: Dict[str, Any]
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
+# User schemas (for future authentication) - currently unused
 
 # API response schemas
 class APIResponse(BaseModel):

@@ -100,34 +100,24 @@ async def create_article(article_data: dict):
         if not url:
             raise HTTPException(status_code=400, detail="URL is required")
         
-        print(f"Starting article creation for URL: {url}")
-        
         # Scrape the article
-        print("Starting web scraping...")
         try:
             scraped_data = scrape_article(url)
-            print(f"Scraping successful. Title: {scraped_data['title'][:50]}...")
         except Exception as scrape_error:
-            print(f"Scraping failed: {str(scrape_error)}")
             raise HTTPException(status_code=500, detail=f"Failed to scrape article: {str(scrape_error)}")
         
         # Get summarization prompt from settings
-        print("Getting settings...")
         prompt = SettingsService.get_setting("summarization_prompt")
         if not prompt:
             prompt = "Summarize the following article in a clear, concise manner:"
         
         # Generate summary
-        print("Starting AI summarization...")
         try:
             summary = summarize_text(scraped_data["full_text"], prompt)
-            print(f"Summarization successful. Length: {len(summary)} chars")
         except Exception as ai_error:
-            print(f"AI summarization failed: {str(ai_error)}")
             raise HTTPException(status_code=500, detail=f"AI summarization failed: {str(ai_error)}")
         
         # Create article object
-        print("Creating article object...")
         create_data = {
             "title": scraped_data["title"],
             "publication_name": scraped_data["publication_name"],
@@ -140,10 +130,8 @@ async def create_article(article_data: dict):
         }
         
         # Insert into database
-        print("Saving to database...")
         article = ArticleService.create_article(create_data)
         
-        print("Article creation completed successfully")
         return article
     except HTTPException:
         raise
