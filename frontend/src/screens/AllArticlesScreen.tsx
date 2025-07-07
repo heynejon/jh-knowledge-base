@@ -41,9 +41,32 @@ const AllArticlesScreen: React.FC = () => {
       setIsCreating(true);
       const article = await articleApi.createArticle(newUrl);
       navigate(`/new-item?id=${article._id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating article:', error);
-      alert('Failed to create article. Please check the URL and try again.');
+      
+      // Check if it's a duplicate URL error (409 Conflict)
+      if (error.response?.status === 409) {
+        const errorMessage = error.response?.data?.detail || 'An article with this URL already exists.';
+        
+        // Check if the error message contains a link to the existing article
+        if (errorMessage.includes('/article/')) {
+          const linkMatch = errorMessage.match(/\/article\/(\d+)/);
+          if (linkMatch) {
+            const articleId = linkMatch[1];
+            const userWantsToView = window.confirm(
+              `An article with this URL already exists in your knowledge base. Would you like to view the existing article?`
+            );
+            if (userWantsToView) {
+              navigate(`/article/${articleId}`);
+              return;
+            }
+          }
+        } else {
+          alert(errorMessage);
+        }
+      } else {
+        alert('Failed to create article. Please check the URL and try again.');
+      }
     } finally {
       setIsCreating(false);
     }
