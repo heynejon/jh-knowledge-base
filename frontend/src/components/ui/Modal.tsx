@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from './Button';
+import Input from './Input';
 import { CloseIcon } from './Icons';
 
 interface ModalProps {
@@ -65,11 +66,11 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in backdrop-blur-sm"
       onClick={handleOverlayClick}
     >
       <div 
-        className={`w-full ${sizeClasses[size]} bg-white rounded-lg shadow-modal animate-scale-in`}
+        className={`w-full ${sizeClasses[size]} bg-white rounded-lg shadow-modal animate-scale-in transform transition-all duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
@@ -108,10 +109,14 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  description?: string;
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'info';
   isLoading?: boolean;
+  requireTyping?: string; // User must type this text to confirm
+  showDetails?: boolean;
+  details?: string[];
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -120,11 +125,29 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   message,
+  description,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   variant = 'info',
   isLoading = false,
+  requireTyping,
+  showDetails = false,
+  details = [],
 }) => {
+  const [confirmationText, setConfirmationText] = useState('');
+  const [showDetailsList, setShowDetailsList] = useState(false);
+  
+  // Reset confirmation text when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmationText('');
+      setShowDetailsList(false);
+    }
+  }, [isOpen]);
+  
+  const canConfirm = requireTyping 
+    ? confirmationText.trim() === requireTyping.trim() 
+    : true;
   const iconColors = {
     danger: 'text-error-600',
     warning: 'text-warning-600',
@@ -156,23 +179,79 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <div className="flex items-start space-x-4">
-        <div className={`flex-shrink-0 ${iconColors[variant]}`}>
-          {icons[variant]}
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm" closeOnOverlayClick={!requireTyping}>
+      <div className="space-y-4">
+        {/* Icon and main message */}
+        <div className="flex items-start space-x-4">
+          <div className={`flex-shrink-0 ${iconColors[variant]} animate-bounce-gentle`}>
+            {icons[variant]}
+          </div>
+          <div className="flex-1 space-y-2">
+            <p className="text-body text-gray-900 font-medium">
+              {message}
+            </p>
+            {description && (
+              <p className="text-body-sm text-gray-600">
+                {description}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex-1">
-          <p className="text-body text-gray-700">
-            {message}
-          </p>
-        </div>
+
+        {/* Details section */}
+        {showDetails && details.length > 0 && (
+          <div className="bg-gray-50 rounded-lg p-4">
+            <button
+              onClick={() => setShowDetailsList(!showDetailsList)}
+              className="flex items-center text-body-sm text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              <svg 
+                className={`w-4 h-4 mr-2 transition-transform ${showDetailsList ? 'rotate-90' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              {showDetailsList ? 'Hide details' : 'Show details'} ({details.length} items)
+            </button>
+            
+            {showDetailsList && (
+              <div className="mt-3 pl-6 space-y-1 animate-fade-in-up">
+                {details.map((detail, index) => (
+                  <div key={index} className="text-body-sm text-gray-600 flex items-center">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-3 flex-shrink-0"></span>
+                    {detail}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Confirmation typing requirement */}
+        {requireTyping && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-body-sm text-yellow-800 mb-3">
+              To confirm this action, please type <code className="bg-yellow-100 px-1 rounded font-mono text-xs">{requireTyping}</code> in the field below:
+            </p>
+            <Input
+              value={confirmationText}
+              onChange={(e) => setConfirmationText(e.target.value)}
+              placeholder={`Type "${requireTyping}" to confirm`}
+              className="font-mono"
+              autoFocus
+            />
+          </div>
+        )}
       </div>
       
-      <div className="flex justify-end space-x-3 mt-6">
+      <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
         <Button
           variant="secondary"
           onClick={onClose}
           disabled={isLoading}
+          className="min-w-[80px]"
         >
           {cancelText}
         </Button>
@@ -180,6 +259,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           variant={buttonVariants[variant]}
           onClick={onConfirm}
           isLoading={isLoading}
+          disabled={!canConfirm}
+          className="min-w-[100px]"
         >
           {confirmText}
         </Button>

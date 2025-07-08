@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { Card, Button, Textarea, ConfirmationModal } from '../components/ui';
+import LoadingSpinner, { ArticleContentSkeleton } from '../components/LoadingSpinner';
+import { Card, Button, Textarea, ConfirmationModal, useSuccessToast, useErrorToast } from '../components/ui';
 import { EditIcon, TrashIcon, ExternalLinkIcon, CalendarIcon, GlobeIcon } from '../components/ui/Icons';
 
 const ItemViewScreen: React.FC = () => {
@@ -17,6 +17,8 @@ const ItemViewScreen: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const showSuccessToast = useSuccessToast();
+  const showErrorToast = useErrorToast();
   
   // Simple edit mode without any external dependencies
 
@@ -48,9 +50,10 @@ const ItemViewScreen: React.FC = () => {
       await articleApi.updateArticle(id, { summary: editedSummary });
       setArticle({ ...article, summary: editedSummary });
       setIsEditing(false);
+      showSuccessToast('Summary Updated', 'Your article summary has been saved successfully.');
     } catch (error) {
       console.error('Error saving summary:', error);
-      alert('Failed to save summary. Please try again.');
+      showErrorToast('Failed to Save Summary', 'Please try again in a moment.');
     } finally {
       setIsSaving(false);
     }
@@ -71,10 +74,11 @@ const ItemViewScreen: React.FC = () => {
     try {
       setIsDeleting(true);
       await articleApi.deleteArticle(id);
+      showSuccessToast('Article Deleted', 'The article has been removed from your knowledge base.');
       navigate('/'); // Navigate back to main screen
     } catch (error) {
       console.error('Error deleting article:', error);
-      alert('Failed to delete article. Please try again.');
+      showErrorToast('Failed to Delete Article', 'Please try again in a moment.');
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
@@ -96,12 +100,13 @@ const ItemViewScreen: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header showBackButton={true} title="Article" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Header showBackButton={true} title="Loading..." />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <Card className="mb-4 sm:mb-6">
+            <ArticleContentSkeleton />
+          </Card>
           <Card>
-            <div className="flex justify-center items-center py-12">
-              <LoadingSpinner size="lg" />
-            </div>
+            <ArticleContentSkeleton />
           </Card>
         </div>
       </div>
@@ -128,7 +133,7 @@ const ItemViewScreen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 animate-fade-in">
       <Header showBackButton={true} title={article.title} />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -264,11 +269,20 @@ const ItemViewScreen: React.FC = () => {
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
         title="Delete Article"
-        message={`Are you sure you want to delete "${article.title}"? This action cannot be undone.`}
+        message={`Delete "${article.title}"?`}
+        description="This action cannot be undone. The article and its summary will be permanently removed from your knowledge base."
         confirmText="Delete Article"
         cancelText="Cancel"
         variant="danger"
         isLoading={isDeleting}
+        requireTyping="DELETE"
+        showDetails={true}
+        details={[
+          "Article content will be permanently deleted",
+          "Custom summary will be lost", 
+          "This action cannot be reversed",
+          "The article URL will no longer be tracked"
+        ]}
       />
     </div>
   );

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
-import { ArticleCardSkeleton } from '../components/LoadingSpinner';
+import { ArticleCardSkeleton, ArticleGridSkeleton } from '../components/LoadingSpinner';
 import DuplicateUrlModal from '../components/DuplicateUrlModal';
-import { Card, Button, Input } from '../components/ui';
+import { Card, Button, Input, useErrorToast } from '../components/ui';
 import { SearchIcon, PlusIcon, CalendarIcon, GlobeIcon, ArrowLeftIcon, FilterIcon, SortIcon, GridIcon, ListIcon } from '../components/ui/Icons';
 
 type SortOption = 'newest' | 'oldest' | 'title' | 'publication';
@@ -23,6 +23,7 @@ const AllArticlesScreen: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPublication, setSelectedPublication] = useState('');
   const navigate = useNavigate();
+  const showErrorToast = useErrorToast();
 
 
   useEffect(() => {
@@ -122,14 +123,14 @@ const AllArticlesScreen: React.FC = () => {
               return;
             }
           } else {
-            alert(errorMessage);
+            showErrorToast('Duplicate Article', errorMessage);
           }
         } catch (modalError) {
           console.error('Error in modal logic:', modalError);
-          alert('An article with this URL already exists in your knowledge base.');
+          showErrorToast('Duplicate Article', 'An article with this URL already exists in your knowledge base.');
         }
       } else {
-        alert('Failed to create article. Please check the URL and try again.');
+        showErrorToast('Failed to Create Article', 'Please check the URL and try again.');
       }
     } finally {
       setIsCreating(false);
@@ -156,7 +157,7 @@ const AllArticlesScreen: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 animate-fade-in">
         <Header showSettingsButton={true} />
         
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -312,10 +313,22 @@ const AllArticlesScreen: React.FC = () => {
           {/* Articles List */}
           <Card padding="none">
             {loading ? (
-              <div className="p-6 space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <ArticleCardSkeleton key={i} />
-                ))}
+              <div className={viewMode === 'grid' ? 'p-6' : 'p-6 space-y-4'}>
+                {viewMode === 'list' ? (
+                  <div className="divide-y divide-gray-200">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="p-6">
+                        <ArticleCardSkeleton />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <ArticleGridSkeleton key={i} />
+                    ))}
+                  </div>
+                )}
               </div>
             ) : articles.length === 0 ? (
               <div className="text-center py-12 px-6">
@@ -349,11 +362,12 @@ const AllArticlesScreen: React.FC = () => {
               <div className={viewMode === 'grid' ? 'p-6' : ''}>
                 {viewMode === 'list' ? (
                   <div className="divide-y divide-gray-200">
-                    {filteredArticles.map((article) => (
+                    {filteredArticles.map((article, index) => (
                       <Link
                         key={article._id}
                         to={`/article/${article._id}`}
-                        className="block hover:bg-gray-50 transition-colors no-underline group"
+                        className="block hover:bg-gray-50 transition-all duration-200 no-underline group hover:shadow-sm rounded-lg animate-fade-in-up"
+                        style={{ animationDelay: `${index * 50}ms` }}
                       >
                         <div className="p-4 sm:p-6">
                           <div className="flex items-start justify-between">
@@ -372,7 +386,7 @@ const AllArticlesScreen: React.FC = () => {
                                 </div>
                               </div>
                             </div>
-                            <div className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:translate-x-1">
                               <ArrowLeftIcon className="w-5 h-5 text-gray-400 rotate-180" />
                             </div>
                           </div>
@@ -382,13 +396,14 @@ const AllArticlesScreen: React.FC = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {filteredArticles.map((article) => (
+                    {filteredArticles.map((article, index) => (
                       <Link
                         key={article._id}
                         to={`/article/${article._id}`}
-                        className="block no-underline group"
+                        className="block no-underline group animate-fade-in-up"
+                        style={{ animationDelay: `${index * 100}ms` }}
                       >
-                        <Card className="h-full hover:shadow-md transition-shadow" padding="sm">
+                        <Card className="h-full hover:shadow-md transition-all duration-200 transform hover:-translate-y-1" padding="sm">
                           <div className="space-y-2 sm:space-y-3">
                             <h3 className="text-body sm:text-body-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-primary-600 transition-colors">
                               {article.title}

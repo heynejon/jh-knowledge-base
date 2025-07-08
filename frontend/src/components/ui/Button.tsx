@@ -23,13 +23,13 @@ const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]';
   
   const variantClasses = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm',
-    secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500 shadow-sm',
-    ghost: 'bg-transparent text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
-    danger: 'bg-error-600 text-white hover:bg-error-700 focus:ring-error-500 shadow-sm',
+    primary: 'bg-primary-600 text-white hover:bg-primary-700 hover:shadow-lg focus:ring-primary-500 shadow-sm active:bg-primary-800',
+    secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md focus:ring-primary-500 shadow-sm active:bg-gray-100',
+    ghost: 'bg-transparent text-primary-600 hover:bg-primary-50 hover:text-primary-700 focus:ring-primary-500 active:bg-primary-100',
+    danger: 'bg-error-600 text-white hover:bg-error-700 hover:shadow-lg focus:ring-error-500 shadow-sm active:bg-error-800',
   };
   
   const sizeClasses = {

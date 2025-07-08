@@ -27,13 +27,13 @@ const Input: React.FC<InputProps> = ({
 }) => {
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
   
-  const baseClasses = 'block w-full border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'block w-full border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-400';
   
   const variantClasses = {
     default: error 
-      ? 'border-error-300 focus:border-error-500 focus:ring-error-500' 
-      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500',
-    error: 'border-error-300 focus:border-error-500 focus:ring-error-500',
+      ? 'border-error-300 focus:border-error-500 focus:ring-error-500 focus:shadow-lg focus:shadow-error-500/10' 
+      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500 focus:shadow-lg focus:shadow-primary-500/10',
+    error: 'border-error-300 focus:border-error-500 focus:ring-error-500 focus:shadow-lg focus:shadow-error-500/10',
   };
   
   const sizeClasses = {
@@ -111,11 +111,11 @@ export const Textarea: React.FC<TextareaProps> = ({
 }) => {
   const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
   
-  const baseClasses = 'block w-full px-4 py-3 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'block w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-400';
   
   const borderClasses = error 
-    ? 'border-error-300 focus:border-error-500 focus:ring-error-500' 
-    : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500';
+    ? 'border-error-300 focus:border-error-500 focus:ring-error-500 focus:shadow-lg focus:shadow-error-500/10' 
+    : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500 focus:shadow-lg focus:shadow-primary-500/10';
     
   const resizeClasses = {
     none: 'resize-none',

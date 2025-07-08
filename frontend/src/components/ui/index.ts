@@ -9,3 +9,5 @@ export type { InputSize, InputVariant } from './Input';
 export { default as Modal, ConfirmationModal } from './Modal';
 
 export * from './Icons';
+
+export * from './Toast';

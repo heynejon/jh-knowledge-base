@@ -104,6 +104,9 @@ module.exports = {
         'fade-in': 'fadeIn 200ms ease-in-out',
         'slide-up': 'slideUp 200ms ease-out',
         'scale-in': 'scaleIn 150ms ease-out',
+        'shimmer': 'shimmer 1.5s ease-in-out infinite',
+        'fade-in-up': 'fadeInUp 300ms ease-out',
+        'bounce-gentle': 'bounceGentle 0.6s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -117,6 +120,19 @@ module.exports = {
         scaleIn: {
           '0%': { transform: 'scale(0.95)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        bounceGentle: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.05)' },
+          '100%': { transform: 'scale(1)' },
         },
       },
     },

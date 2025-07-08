@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { articleApi, Settings } from '../utils/api';
 import Header from '../components/Header';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { Card, Button, Textarea } from '../components/ui';
+import LoadingSpinner, { SettingsPageSkeleton } from '../components/LoadingSpinner';
+import { Card, Button, Textarea, useSuccessToast, useErrorToast } from '../components/ui';
 import { SettingsIcon, ExternalLinkIcon } from '../components/ui/Icons';
 
 const SettingsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState('');
+  const showSuccessToast = useSuccessToast();
+  const showErrorToast = useErrorToast();
 
   useEffect(() => {
     loadSettings();
@@ -32,12 +34,10 @@ const SettingsScreen: React.FC = () => {
     try {
       setIsSaving(true);
       await articleApi.updateSettings({ summarization_prompt: editedPrompt });
-      // TODO: Replace with proper toast notification
-      alert('Settings saved successfully!');
+      showSuccessToast('Settings Saved', 'Your summarization prompt has been updated successfully.');
     } catch (error) {
       console.error('Error saving settings:', error);
-      // TODO: Replace with proper error notification
-      alert('Failed to save settings. Please try again.');
+      showErrorToast('Failed to Save Settings', 'Please try again in a moment.');
     } finally {
       setIsSaving(false);
     }
@@ -55,9 +55,10 @@ const SettingsScreen: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      showSuccessToast('Export Complete', 'Your knowledge base has been exported successfully.');
     } catch (error) {
       console.error('Error exporting data:', error);
-      alert('Failed to export data. Please try again.');
+      showErrorToast('Export Failed', 'Please try again in a moment.');
     }
   };
 
@@ -70,19 +71,15 @@ const SettingsScreen: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header title="Settings" showBackButton={true} />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <div className="flex justify-center items-center py-12">
-              <LoadingSpinner size="lg" />
-            </div>
-          </Card>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <SettingsPageSkeleton />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 animate-fade-in">
       <Header title="Settings" showBackButton={true} />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">

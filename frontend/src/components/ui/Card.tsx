@@ -15,9 +15,9 @@ const Card: React.FC<CardProps> = ({
   padding = 'md',
   onClick,
 }) => {
-  const baseClasses = 'bg-white border border-gray-200 rounded-lg shadow-card';
+  const baseClasses = 'bg-white border border-gray-200 rounded-lg shadow-card transition-all duration-200';
   
-  const hoverClasses = hover ? 'hover:shadow-card-hover transition-shadow duration-200 cursor-pointer' : '';
+  const hoverClasses = hover ? 'hover:shadow-card-hover hover:border-gray-300 hover:-translate-y-1 cursor-pointer' : '';
   
   const paddingClasses = {
     none: '',

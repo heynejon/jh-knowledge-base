@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
-import LoadingSpinner from '../components/LoadingSpinner';
+import LoadingSpinner, { ArticleContentSkeleton } from '../components/LoadingSpinner';
+import { ConfirmationModal } from '../components/ui';
 
 const NewItemScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const NewItemScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'summary' | 'full'>('summary');
   const [isSaving, setIsSaving] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
 
   useEffect(() => {
     if (articleId) {
@@ -47,7 +49,11 @@ const NewItemScreen: React.FC = () => {
     }
   };
 
-  const handleDiscard = async () => {
+  const handleDiscardClick = () => {
+    setShowDiscardModal(true);
+  };
+
+  const handleConfirmDiscard = async () => {
     if (!article) return;
 
     try {
@@ -57,6 +63,10 @@ const NewItemScreen: React.FC = () => {
       console.error('Error discarding article:', error);
       alert('Failed to discard article. Please try again.');
     }
+  };
+
+  const handleCancelDiscard = () => {
+    setShowDiscardModal(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -71,8 +81,10 @@ const NewItemScreen: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header title="New Article" showBackButton={true} />
-        <div className="flex justify-center items-center py-12">
-          <LoadingSpinner size="lg" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <ArticleContentSkeleton />
+          </div>
         </div>
       </div>
     );
@@ -92,7 +104,7 @@ const NewItemScreen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 animate-fade-in">
       <Header title="New Article" showBackButton={true} />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -180,7 +192,7 @@ const NewItemScreen: React.FC = () => {
                 {isSaving ? 'Saving...' : 'Save to Knowledge Base'}
               </button>
               <button
-                onClick={handleDiscard}
+                onClick={handleDiscardClick}
                 className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium"
               >
                 Discard
@@ -189,6 +201,25 @@ const NewItemScreen: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Discard Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDiscardModal}
+        onClose={handleCancelDiscard}
+        onConfirm={handleConfirmDiscard}
+        title="Discard Article"
+        message={`Discard "${article?.title}"?`}
+        description="The article will be permanently removed and you'll return to the main screen. Any processing work will be lost."
+        confirmText="Discard Article"
+        cancelText="Keep Article"
+        variant="warning"
+        showDetails={true}
+        details={[
+          "Article content will be deleted",
+          "Generated summary will be lost",
+          "You'll need to re-add the URL to try again"
+        ]}
+      />
     </div>
   );
 };
