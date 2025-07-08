@@ -10,8 +10,8 @@ from typing import List, Optional
 import json
 
 from database import ArticleService, SettingsService, init_database
-from scraper import scrape_article
-from summarizer import summarize_text
+from enhanced_scraper import scrape_article_enhanced
+from summarizer import summarize_text, clean_article_content
 
 load_dotenv()
 
@@ -100,9 +100,10 @@ async def create_article(article_data: dict):
         if not url:
             raise HTTPException(status_code=400, detail="URL is required")
         
-        # Scrape the article
+        # Scrape the article using enhanced scraper
         try:
-            scraped_data = scrape_article(url)
+            scraped_data = scrape_article_enhanced(url)
+            print(f"Article scraped using method: {scraped_data.get('method', 'unknown')}")
         except Exception as scrape_error:
             raise HTTPException(status_code=500, detail=f"Failed to scrape article: {str(scrape_error)}")
         
@@ -111,17 +112,17 @@ async def create_article(article_data: dict):
         if not prompt:
             prompt = "Summarize the following article in a clear, concise manner:"
         
-        # Generate summary
+        # Generate summary (no content cleaning during creation for speed)
         try:
             summary = summarize_text(scraped_data["full_text"], prompt)
         except Exception as ai_error:
             raise HTTPException(status_code=500, detail=f"AI summarization failed: {str(ai_error)}")
         
-        # Create article object
+        # Create article object with original scraped content
         create_data = {
             "title": scraped_data["title"],
             "publication_name": scraped_data["publication_name"],
-            "full_text": scraped_data["full_text"],
+            "full_text": scraped_data["full_text"],  # Use original enhanced scraper content
             "summary": summary,
             "url": url,
             "date_added": datetime.now(),
@@ -202,6 +203,56 @@ async def delete_article(article_id: str):
         return {"message": "Article deleted successfully"}
     except Exception as e:
         print(f"Error deleting article {article_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/articles/{article_id}/clean-content")
+async def clean_article_content_endpoint(article_id: str):
+    """
+    Clean the article content using AI to remove navigation, ads, and irrelevant content.
+    This is an on-demand operation triggered by the user.
+    """
+    try:
+        print(f"Cleaning content for article ID: {article_id}")
+        
+        # Get the article
+        article = ArticleService.get_article_by_id(article_id)
+        if not article:
+            raise HTTPException(status_code=404, detail="Article not found")
+        
+        # Clean the content using AI
+        try:
+            cleaned_content = clean_article_content(article["full_text"])
+            print(f"Content cleaning for article {article_id}: Original length {len(article['full_text'])}, cleaned length {len(cleaned_content)}")
+            
+            # Update the article with cleaned content
+            update_data = {
+                "full_text": cleaned_content,
+                "updated_at": datetime.now()
+            }
+            
+            success = ArticleService.update_article(article_id, update_data)
+            if not success:
+                raise HTTPException(status_code=500, detail="Failed to update article with cleaned content")
+            
+            # Get the updated article to return
+            updated_article = ArticleService.get_article_by_id(article_id)
+            
+            return {
+                "success": True,
+                "message": "Article content cleaned successfully",
+                "original_length": len(article["full_text"]),
+                "cleaned_length": len(cleaned_content),
+                "article": updated_article
+            }
+            
+        except Exception as cleaning_error:
+            print(f"Content cleaning error: {str(cleaning_error)}")
+            raise HTTPException(status_code=500, detail=f"Failed to clean article content: {str(cleaning_error)}")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in clean content endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/settings")

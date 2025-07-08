@@ -18,6 +18,7 @@ const ItemViewScreen: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
   const showSuccessToast = useSuccessToast();
   const showErrorToast = useErrorToast();
   
@@ -88,6 +89,29 @@ const ItemViewScreen: React.FC = () => {
 
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
+  };
+
+  const handleCleanContent = async () => {
+    if (!article || !id) return;
+
+    try {
+      setIsCleaning(true);
+      const response = await articleApi.cleanContent(id);
+      const result = response;
+      
+      // Update the article with cleaned content
+      setArticle({ ...article, full_text: result.article.full_text });
+      
+      showSuccessToast(
+        'Content Cleaned', 
+        `Article content has been cleaned with AI. Reduced from ${result.original_length} to ${result.cleaned_length} characters.`
+      );
+    } catch (error) {
+      console.error('Error cleaning content:', error);
+      showErrorToast('Failed to Clean Content', 'Please try again in a moment.');
+    } finally {
+      setIsCleaning(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -184,6 +208,18 @@ const ItemViewScreen: React.FC = () => {
                   className="w-full sm:w-[85px]"
                 >
                   Edit
+                </Button>
+              )}
+              {viewMode === 'full' && !isEditing && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleCleanContent}
+                  disabled={isCleaning}
+                  isLoading={isCleaning}
+                  className="w-full sm:w-auto"
+                >
+                  {isCleaning ? 'Cleaning...' : 'Clean with AI'}
                 </Button>
               )}
               {!isEditing && (

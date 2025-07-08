@@ -4,7 +4,7 @@ import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner, { ArticleContentSkeleton } from '../components/LoadingSpinner';
 import RichText from '../components/RichText';
-import { ConfirmationModal } from '../components/ui';
+import { ConfirmationModal, Toggle } from '../components/ui';
 
 const NewItemScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -131,28 +131,13 @@ const NewItemScreen: React.FC = () => {
             </div>
             
             {/* View Toggle */}
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setViewMode('summary')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'summary'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Summary
-              </button>
-              <button
-                onClick={() => setViewMode('full')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'full'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Full Article
-              </button>
-            </div>
+            <Toggle
+              leftLabel="Summary"
+              rightLabel="Article"
+              isRight={viewMode === 'full'}
+              onChange={(isRight) => setViewMode(isRight ? 'full' : 'summary')}
+              size="md"
+            />
           </div>
 
           {/* Content */}

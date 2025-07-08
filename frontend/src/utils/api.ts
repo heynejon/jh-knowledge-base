@@ -64,6 +64,11 @@ export const articleApi = {
     const response = await api.get('/api/export');
     return response.data;
   },
+
+  cleanContent: async (articleId: string): Promise<any> => {
+    const response = await api.post(`/api/articles/${articleId}/clean-content`);
+    return response.data;
+  },
 };
 
 export default api;
