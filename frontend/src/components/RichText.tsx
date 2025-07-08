@@ -10,24 +10,33 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
   const formatContent = (text: string): string => {
     if (!text) return '';
     
-    // Convert line breaks to HTML breaks
-    let formatted = text.replace(/\n/g, '<br />');
+    // Split text into paragraphs by double line breaks first
+    const paragraphs = text.split(/\n\s*\n/);
     
-    // Convert **bold** to <strong>
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // Convert *italic* to <em>
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // Convert _underline_ to <u>
-    formatted = formatted.replace(/_(.*?)_/g, '<u>$1</u>');
-    
-    // Convert `code` to <code>
-    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>');
-    
-    // Convert URLs to links
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    formatted = formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    let formatted = paragraphs.map(paragraph => {
+      if (!paragraph.trim()) return '';
+      
+      // Convert single line breaks within paragraphs to <br />
+      let p = paragraph.replace(/\n/g, '<br />');
+      
+      // Convert **bold** to <strong>
+      p = p.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Convert *italic* to <em>
+      p = p.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      
+      // Convert _underline_ to <u>
+      p = p.replace(/_(.*?)_/g, '<u>$1</u>');
+      
+      // Convert `code` to <code>
+      p = p.replace(/`(.*?)`/g, '<code>$1</code>');
+      
+      // Convert URLs to links
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      p = p.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+      
+      return `<p>${p}</p>`;
+    }).filter(p => p).join('');
     
     return formatted;
   };

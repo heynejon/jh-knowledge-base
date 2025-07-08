@@ -109,9 +109,15 @@
   /* Enhanced rich text styles */
   .rich-text {
     @apply text-gray-700 leading-relaxed;
-    white-space: pre-wrap;
-    word-wrap: break-word;
     line-height: 1.7;
+  }
+
+  .rich-text p {
+    @apply mb-4;
+  }
+
+  .rich-text p:last-child {
+    @apply mb-0;
   }
 
   .rich-text strong,
@@ -145,11 +151,9 @@
     @apply border-l-4 border-gray-300 pl-4 my-4 italic text-gray-600;
   }
 
-  /* Ensure line breaks are preserved */
+  /* Ensure line breaks within paragraphs work properly */
   .rich-text br {
-    display: block;
-    margin: 0.5em 0;
-    content: "";
+    line-height: 1.5;
   }
 }
 
