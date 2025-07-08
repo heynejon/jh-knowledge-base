@@ -247,7 +247,11 @@ const ItemViewScreen: React.FC = () => {
                 <div>
                   <h2 className="text-h3 font-semibold text-gray-900 mb-4">Summary</h2>
                   <div className="formatted-text text-gray-700">
-                    {article.summary}
+                    {article.summary?.split('\n').map((paragraph, index) => (
+                      <p key={index} className="mb-4">
+                        {paragraph}
+                      </p>
+                    ))}
                   </div>
                 </div>
               )}
@@ -256,7 +260,11 @@ const ItemViewScreen: React.FC = () => {
             <div>
               <h2 className="text-h3 font-semibold text-gray-900 mb-4">Full Article</h2>
               <div className="formatted-text text-gray-700">
-                {article.full_text}
+                {article.full_text?.split('\n').map((paragraph, index) => (
+                  <p key={index} className="mb-4">
+                    {paragraph}
+                  </p>
+                ))}
               </div>
             </div>
           )}
@@ -275,7 +283,6 @@ const ItemViewScreen: React.FC = () => {
         cancelText="Cancel"
         variant="danger"
         isLoading={isDeleting}
-        requireTyping="DELETE"
         showDetails={true}
         details={[
           "Article content will be permanently deleted",
