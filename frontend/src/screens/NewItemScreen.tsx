@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner, { ArticleContentSkeleton } from '../components/LoadingSpinner';
+import RichText from '../components/RichText';
 import { ConfirmationModal } from '../components/ui';
 
 const NewItemScreen: React.FC = () => {
@@ -159,24 +160,12 @@ const NewItemScreen: React.FC = () => {
             {viewMode === 'summary' ? (
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Summary</h2>
-                <div className="prose max-w-none text-gray-800 leading-relaxed">
-                  {article.summary.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
+                <RichText content={article.summary || ''} />
               </div>
             ) : (
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Full Article</h2>
-                <div className="prose max-w-none text-gray-800 leading-relaxed">
-                  {article.full_text.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
+                <RichText content={article.full_text || ''} />
               </div>
             )}
           </div>

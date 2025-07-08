@@ -22,6 +22,8 @@
   /* Rich text formatting styles for article content */
   .formatted-text {
     @apply text-gray-700 leading-relaxed;
+    white-space: pre-wrap; /* Preserve whitespace and line breaks */
+    word-wrap: break-word;
   }
   
   .formatted-text p {
@@ -102,6 +104,52 @@
   
   .formatted-text a {
     @apply text-primary-600 underline hover:text-primary-700 transition-colors;
+  }
+
+  /* Enhanced rich text styles */
+  .rich-text {
+    @apply text-gray-700 leading-relaxed;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.7;
+  }
+
+  .rich-text strong,
+  .rich-text b {
+    @apply font-semibold text-gray-900;
+  }
+
+  .rich-text em,
+  .rich-text i {
+    @apply italic;
+  }
+
+  .rich-text u {
+    @apply underline;
+  }
+
+  .rich-text a {
+    @apply text-primary-600 underline hover:text-primary-700 transition-colors;
+  }
+
+  .rich-text code {
+    @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
+  }
+
+  .rich-text pre {
+    @apply bg-gray-100 p-4 rounded-lg overflow-x-auto my-4;
+    white-space: pre;
+  }
+
+  .rich-text blockquote {
+    @apply border-l-4 border-gray-300 pl-4 my-4 italic text-gray-600;
+  }
+
+  /* Ensure line breaks are preserved */
+  .rich-text br {
+    display: block;
+    margin: 0.5em 0;
+    content: "";
   }
 }
 

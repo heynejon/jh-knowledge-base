@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner, { ArticleContentSkeleton } from '../components/LoadingSpinner';
+import RichText from '../components/RichText';
 import { Card, Button, Textarea, ConfirmationModal, useSuccessToast, useErrorToast } from '../components/ui';
 import { EditIcon, TrashIcon, ExternalLinkIcon, CalendarIcon, GlobeIcon } from '../components/ui/Icons';
 
@@ -246,26 +247,14 @@ const ItemViewScreen: React.FC = () => {
               ) : (
                 <div>
                   <h2 className="text-h3 font-semibold text-gray-900 mb-4">Summary</h2>
-                  <div className="formatted-text text-gray-700">
-                    {article.summary?.split('\n').map((paragraph, index) => (
-                      <p key={index} className="mb-4">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
+                  <RichText content={article.summary || ''} />
                 </div>
               )}
             </div>
           ) : (
             <div>
               <h2 className="text-h3 font-semibold text-gray-900 mb-4">Full Article</h2>
-              <div className="formatted-text text-gray-700">
-                {article.full_text?.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
+              <RichText content={article.full_text || ''} />
             </div>
           )}
         </Card>
