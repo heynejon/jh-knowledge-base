@@ -4,7 +4,7 @@ import { articleApi, Article } from '../utils/api';
 import Header from '../components/Header';
 import LoadingSpinner, { ArticleContentSkeleton } from '../components/LoadingSpinner';
 import RichText from '../components/RichText';
-import { Card, Button, Textarea, ConfirmationModal, useSuccessToast, useErrorToast } from '../components/ui';
+import { Card, Button, Textarea, Toggle, ConfirmationModal, useSuccessToast, useErrorToast } from '../components/ui';
 import { EditIcon, TrashIcon, ExternalLinkIcon, CalendarIcon, GlobeIcon } from '../components/ui/Icons';
 
 const ItemViewScreen: React.FC = () => {
@@ -165,25 +165,14 @@ const ItemViewScreen: React.FC = () => {
           </div>
           
           {/* View Toggle with Action Buttons */}
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-2 w-full">
-              <Button
-                variant={viewMode === 'summary' ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={() => setViewMode('summary')}
-                className="flex-1 sm:flex-none"
-              >
-                Summary
-              </Button>
-              <Button
-                variant={viewMode === 'full' ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={() => setViewMode('full')}
-                className="flex-1 sm:flex-none"
-              >
-                Full Article
-              </Button>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+            <Toggle
+              leftLabel="Summary"
+              rightLabel="Article"
+              isRight={viewMode === 'full'}
+              onChange={(isRight) => setViewMode(isRight ? 'full' : 'summary')}
+              size="md"
+            />
             
             <div className="flex flex-col sm:flex-row gap-2">
               {viewMode === 'summary' && !isEditing && (
@@ -192,9 +181,9 @@ const ItemViewScreen: React.FC = () => {
                   size="sm"
                   onClick={() => setIsEditing(true)}
                   leftIcon={<EditIcon />}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-[85px]"
                 >
-                  Edit Summary
+                  Edit
                 </Button>
               )}
               {!isEditing && (
@@ -203,7 +192,7 @@ const ItemViewScreen: React.FC = () => {
                   size="sm"
                   onClick={handleDeleteClick}
                   leftIcon={<TrashIcon />}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-[85px]"
                 >
                   Delete
                 </Button>
