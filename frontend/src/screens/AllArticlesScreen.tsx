@@ -369,20 +369,22 @@ const AllArticlesScreen: React.FC = () => {
                         className="block hover:bg-gray-50 transition-all duration-200 no-underline group hover:shadow-sm rounded-lg animate-fade-in-up"
                         style={{ animationDelay: `${index * 50}ms` }}
                       >
-                        <div className="p-4 sm:p-6">
+                        <div className="p-3 sm:p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-body sm:text-body-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
-                                {article.title}
-                              </h3>
-                              <div className="flex flex-col sm:flex-row sm:items-center text-body-sm text-gray-500 gap-2 sm:gap-4">
-                                <div className="flex items-center gap-1">
-                                  <GlobeIcon className="w-4 h-4 flex-shrink-0" />
-                                  <span className="truncate text-xs sm:text-sm">{article.publication_name}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="w-4 h-4 flex-shrink-0" />
-                                  <span className="text-xs sm:text-sm">{formatDate(article.date_added)}</span>
+                              <div className="flex items-start justify-between gap-4">
+                                <h3 className="text-body sm:text-body-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-primary-600 transition-colors flex-1">
+                                  {article.title}
+                                </h3>
+                                <div className="flex flex-col sm:flex-row sm:items-center text-body-sm text-gray-500 gap-2 sm:gap-4 flex-shrink-0">
+                                  <div className="flex items-center gap-1">
+                                    <GlobeIcon className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate text-xs">{article.publication_name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <CalendarIcon className="w-3 h-3 flex-shrink-0" />
+                                    <span className="text-xs">{formatDate(article.date_added)}</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>

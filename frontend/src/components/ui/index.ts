@@ -8,6 +8,8 @@ export type { InputSize, InputVariant } from './Input';
 
 export { default as Modal, ConfirmationModal } from './Modal';
 
+export { default as Toggle } from './Toggle';
+
 export * from './Icons';
 
 export * from './Toast';
