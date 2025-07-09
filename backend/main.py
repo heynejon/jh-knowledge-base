@@ -10,7 +10,7 @@ from typing import List, Optional
 import json
 
 from database import ArticleService, SettingsService, init_database
-from enhanced_scraper import scrape_article_enhanced
+from scraper import scrape_article
 from summarizer import summarize_text, clean_article_content
 
 load_dotenv()
@@ -100,10 +100,10 @@ async def create_article(article_data: dict):
         if not url:
             raise HTTPException(status_code=400, detail="URL is required")
         
-        # Scrape the article using enhanced scraper
+        # Scrape the article using basic scraper
         try:
-            scraped_data = scrape_article_enhanced(url)
-            print(f"Article scraped using method: {scraped_data.get('method', 'unknown')}")
+            scraped_data = scrape_article(url)
+            print(f"Article scraped using basic scraper")
         except Exception as scrape_error:
             raise HTTPException(status_code=500, detail=f"Failed to scrape article: {str(scrape_error)}")
         
