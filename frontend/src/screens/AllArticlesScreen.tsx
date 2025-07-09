@@ -174,34 +174,32 @@ const AllArticlesScreen: React.FC = () => {
             </p>
           </div>
 
-          {/* Add New Article Section */}
-          <Card className="mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-h3 font-semibold text-gray-900 mb-4">Add New Article</h2>
-            <form onSubmit={handleCreateArticle} className="space-y-4">
-              <Input
-                type="url"
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                placeholder="Paste article URL here..."
-                leftIcon={<GlobeIcon />}
-                required
-              />
-              <Button
-                type="submit"
-                disabled={isCreating || !newUrl.trim()}
-                isLoading={isCreating}
-                leftIcon={!isCreating ? <PlusIcon /> : undefined}
-                className="w-full"
-                size="sm"
-              >
-                {isCreating ? 'Creating Article...' : 'Add Knowledge Item'}
-              </Button>
-            </form>
-          </Card>
-
-          {/* Search and Filter Section */}
-          <Card className="mb-6 sm:mb-8">
+          {/* Add Article & Search Section */}
+          <Card className="mb-4 sm:mb-6">
             <div className="space-y-4">
+              {/* Add New Article - Inline Form */}
+              <form onSubmit={handleCreateArticle} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Input
+                  type="url"
+                  value={newUrl}
+                  onChange={(e) => setNewUrl(e.target.value)}
+                  placeholder="Paste article URL to add to knowledge base..."
+                  leftIcon={<GlobeIcon />}
+                  className="flex-1"
+                  required
+                />
+                <Button
+                  type="submit"
+                  disabled={isCreating || !newUrl.trim()}
+                  isLoading={isCreating}
+                  leftIcon={!isCreating ? <PlusIcon /> : undefined}
+                  className="w-full sm:w-40"
+                  size="sm"
+                >
+                  {isCreating ? 'Adding...' : 'Add Article'}
+                </Button>
+              </form>
+
               {/* Search Bar */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Input
@@ -217,7 +215,7 @@ const AllArticlesScreen: React.FC = () => {
                   variant="secondary"
                   onClick={() => setShowFilters(!showFilters)}
                   leftIcon={<FilterIcon />}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-40"
                   size="sm"
                 >
                   Filters

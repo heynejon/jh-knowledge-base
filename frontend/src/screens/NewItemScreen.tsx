@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import LoadingSpinner, { ArticleContentSkeleton } from '../components/LoadingSpinner';
 import RichText from '../components/RichText';
 import { ConfirmationModal, Toggle } from '../components/ui';
+import { GlobeIcon, CalendarIcon, ExternalLinkIcon } from '../components/ui/Icons';
 
 const NewItemScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -115,18 +116,23 @@ const NewItemScreen: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
               {article.title}
             </h1>
-            <div className="flex items-center text-sm text-gray-500 space-x-4 mb-4">
-              <span>{article.publication_name}</span>
-              <span>•</span>
-              <span>{formatDate(article.date_added)}</span>
-              <span>•</span>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4 text-body-sm text-gray-500 mb-6">
+              <div className="flex items-center gap-1">
+                <GlobeIcon className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">{article.publication_name}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CalendarIcon className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">Added {formatDate(article.date_added)}</span>
+              </div>
               <a
                 href={article.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800"
+                className="flex items-center gap-1 text-primary-600 hover:text-primary-700 transition-colors"
               >
-                View Original
+                <ExternalLinkIcon className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">View Original</span>
               </a>
             </div>
             

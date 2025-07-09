@@ -258,28 +258,79 @@ async def clean_article_content_endpoint(article_id: str):
 @app.get("/api/settings")
 async def get_settings():
     try:
-        prompt = SettingsService.get_setting("summarization_prompt")
-        if not prompt:
-            # Create default settings
-            default_prompt = "Summarize the following article in a clear, concise manner:"
-            SettingsService.set_setting("summarization_prompt", default_prompt)
-            return {"summarization_prompt": default_prompt}
+        summarization_prompt = SettingsService.get_setting("summarization_prompt")
+        cleaning_prompt = SettingsService.get_setting("cleaning_prompt")
         
-        return {"summarization_prompt": prompt}
+        if not summarization_prompt:
+            # Create default summarization prompt
+            default_summarization = "Summarize the following article in a clear, concise manner:"
+            SettingsService.set_setting("summarization_prompt", default_summarization)
+            summarization_prompt = default_summarization
+        
+        if not cleaning_prompt:
+            # Create default cleaning prompt
+            default_cleaning = """You are a content extraction specialist. Your task is to clean scraped webpage content by removing all irrelevant elements while preserving the main article text EXACTLY as written.
+
+CRITICAL INSTRUCTIONS:
+1. NEVER change, rephrase, or modify even a single word of the actual article content
+2. ONLY remove content that is clearly not part of the main article
+3. Preserve all original formatting, line breaks, and paragraph structure
+4. Do NOT add any new content or commentary
+
+REMOVE these types of content:
+- Navigation menus and breadcrumbs
+- Website headers and footers
+- Newsletter signup prompts
+- Social media sharing buttons and links
+- Author bios and "About the author" sections
+- Related articles lists
+- Advertisement content
+- Comment sections
+- "Subscribe" or "Follow us" calls-to-action
+- Publication metadata (dates, categories, tags)
+- Table of contents (if it's just navigation)
+- Repeated promotional content
+- Website navigation elements
+
+KEEP these elements:
+- The main article title
+- All body paragraphs of the article
+- Subheadings that are part of the article structure
+- Quotes and citations within the article
+- Lists that are part of the article content
+- Any content that is clearly part of the author's intended message
+
+Return ONLY the cleaned article content with no additional commentary or explanation."""
+            SettingsService.set_setting("cleaning_prompt", default_cleaning)
+            cleaning_prompt = default_cleaning
+        
+        return {
+            "summarization_prompt": summarization_prompt,
+            "cleaning_prompt": cleaning_prompt
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/settings")
 async def update_settings(settings_data: dict):
     try:
-        prompt = settings_data.get("summarization_prompt")
-        if not prompt:
-            raise HTTPException(status_code=400, detail="Summarization prompt is required")
+        summarization_prompt = settings_data.get("summarization_prompt")
+        cleaning_prompt = settings_data.get("cleaning_prompt")
         
-        success = SettingsService.set_setting("summarization_prompt", prompt)
+        if not summarization_prompt and not cleaning_prompt:
+            raise HTTPException(status_code=400, detail="At least one prompt is required")
         
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to update settings")
+        # Update summarization prompt if provided
+        if summarization_prompt:
+            success = SettingsService.set_setting("summarization_prompt", summarization_prompt)
+            if not success:
+                raise HTTPException(status_code=500, detail="Failed to update summarization prompt")
+        
+        # Update cleaning prompt if provided
+        if cleaning_prompt:
+            success = SettingsService.set_setting("cleaning_prompt", cleaning_prompt)
+            if not success:
+                raise HTTPException(status_code=500, detail="Failed to update cleaning prompt")
         
         return {"message": "Settings updated successfully"}
     except Exception as e:

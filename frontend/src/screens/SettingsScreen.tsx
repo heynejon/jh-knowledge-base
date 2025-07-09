@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { articleApi, Settings } from '../utils/api';
+import { articleApi } from '../utils/api';
 import Header from '../components/Header';
-import LoadingSpinner, { SettingsPageSkeleton } from '../components/LoadingSpinner';
+import { SettingsPageSkeleton } from '../components/LoadingSpinner';
 import { Card, Button, Textarea, useSuccessToast, useErrorToast } from '../components/ui';
 import { SettingsIcon, ExternalLinkIcon } from '../components/ui/Icons';
 
 const SettingsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [editedPrompt, setEditedPrompt] = useState('');
+  const [editedSummarizationPrompt, setEditedSummarizationPrompt] = useState('');
+  const [editedCleaningPrompt, setEditedCleaningPrompt] = useState('');
   const showSuccessToast = useSuccessToast();
   const showErrorToast = useErrorToast();
 
@@ -20,7 +21,8 @@ const SettingsScreen: React.FC = () => {
     try {
       setLoading(true);
       const data = await articleApi.getSettings();
-      setEditedPrompt(data.summarization_prompt);
+      setEditedSummarizationPrompt(data.summarization_prompt);
+      setEditedCleaningPrompt(data.cleaning_prompt);
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -28,16 +30,33 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSaveSummarizationPrompt = async () => {
     try {
       setIsSaving(true);
-      await articleApi.updateSettings({ summarization_prompt: editedPrompt });
-      showSuccessToast('Settings Saved', 'Your summarization prompt has been updated successfully.');
+      await articleApi.updateSettings({ 
+        summarization_prompt: editedSummarizationPrompt,
+        cleaning_prompt: editedCleaningPrompt
+      });
+      showSuccessToast('Summarization Prompt Saved', 'Your summarization prompt has been updated successfully.');
     } catch (error) {
-      console.error('Error saving settings:', error);
-      showErrorToast('Failed to Save Settings', 'Please try again in a moment.');
+      console.error('Error saving summarization prompt:', error);
+      showErrorToast('Failed to Save Prompt', 'Please try again in a moment.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveCleaningPrompt = async () => {
+    try {
+      setIsSaving(true);
+      await articleApi.updateSettings({ 
+        summarization_prompt: editedSummarizationPrompt,
+        cleaning_prompt: editedCleaningPrompt
+      });
+      showSuccessToast('Cleaning Prompt Saved', 'Your content cleaning prompt has been updated successfully.');
+    } catch (error) {
+      console.error('Error saving cleaning prompt:', error);
+      showErrorToast('Failed to Save Prompt', 'Please try again in a moment.');
     } finally {
       setIsSaving(false);
     }
@@ -62,9 +81,45 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const resetToDefault = () => {
+  const resetSummarizationToDefault = () => {
     const defaultPrompt = "Summarize the following article in a clear, concise manner:";
-    setEditedPrompt(defaultPrompt);
+    setEditedSummarizationPrompt(defaultPrompt);
+  };
+
+  const resetCleaningToDefault = () => {
+    const defaultPrompt = `You are a content extraction specialist. Your task is to clean scraped webpage content by removing all irrelevant elements while preserving the main article text EXACTLY as written.
+
+CRITICAL INSTRUCTIONS:
+1. NEVER change, rephrase, or modify even a single word of the actual article content
+2. ONLY remove content that is clearly not part of the main article
+3. Preserve all original formatting, line breaks, and paragraph structure
+4. Do NOT add any new content or commentary
+
+REMOVE these types of content:
+- Navigation menus and breadcrumbs
+- Website headers and footers
+- Newsletter signup prompts
+- Social media sharing buttons and links
+- Author bios and "About the author" sections
+- Related articles lists
+- Advertisement content
+- Comment sections
+- "Subscribe" or "Follow us" calls-to-action
+- Publication metadata (dates, categories, tags)
+- Table of contents (if it's just navigation)
+- Repeated promotional content
+- Website navigation elements
+
+KEEP these elements:
+- The main article title
+- All body paragraphs of the article
+- Subheadings that are part of the article structure
+- Quotes and citations within the article
+- Lists that are part of the article content
+- Any content that is clearly part of the author's intended message
+
+Return ONLY the cleaned article content with no additional commentary or explanation.`;
+    setEditedCleaningPrompt(defaultPrompt);
   };
 
   if (loading) {
@@ -105,11 +160,11 @@ const SettingsScreen: React.FC = () => {
               This helps you get summaries in the style and format you prefer.
             </p>
             
-            <form onSubmit={handleSaveSettings} className="space-y-6">
+            <div className="space-y-6">
               <Textarea
-                label="Custom Prompt"
-                value={editedPrompt}
-                onChange={(e) => setEditedPrompt(e.target.value)}
+                label="Summarization Prompt"
+                value={editedSummarizationPrompt}
+                onChange={(e) => setEditedSummarizationPrompt(e.target.value)}
                 rows={4}
                 placeholder="Enter your summarization prompt..."
                 helperText="This prompt will be sent to the AI along with each article to generate summaries."
@@ -118,18 +173,19 @@ const SettingsScreen: React.FC = () => {
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={handleSaveSummarizationPrompt}
                   disabled={isSaving}
                   isLoading={isSaving}
                   variant="primary"
                   className="w-full sm:w-auto"
                   size="sm"
                 >
-                  {isSaving ? 'Saving Settings...' : 'Save Settings'}
+                  {isSaving ? 'Saving...' : 'Save Prompt'}
                 </Button>
                 <Button
                   type="button"
-                  onClick={resetToDefault}
+                  onClick={resetSummarizationToDefault}
                   variant="secondary"
                   className="w-full sm:w-auto"
                   size="sm"
@@ -137,12 +193,60 @@ const SettingsScreen: React.FC = () => {
                   Reset to Default
                 </Button>
               </div>
-            </form>
+            </div>
           </Card>
 
-          {/* Data Management */}
+          {/* AI Content Cleaning Settings */}
           <Card>
-            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">Data Management</h2>
+            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">AI Content Cleaning</h2>
+            <p className="text-body text-gray-600 mb-6">
+              Customize the prompt used to clean article content when you use the "Clean Content" feature. 
+              This removes navigation, ads, and other irrelevant content while preserving the main article text.
+            </p>
+            
+            <div className="space-y-6">
+              <Textarea
+                label="Content Cleaning Prompt"
+                value={editedCleaningPrompt}
+                onChange={(e) => setEditedCleaningPrompt(e.target.value)}
+                rows={8}
+                placeholder="Enter your content cleaning prompt..."
+                helperText="This prompt will be used to clean scraped content and remove irrelevant elements."
+                required
+              />
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  type="button"
+                  onClick={handleSaveCleaningPrompt}
+                  disabled={isSaving}
+                  isLoading={isSaving}
+                  variant="primary"
+                  className="w-full sm:w-auto"
+                  size="sm"
+                >
+                  {isSaving ? 'Saving...' : 'Save Prompt'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={resetCleaningToDefault}
+                  variant="secondary"
+                  className="w-full sm:w-auto"
+                  size="sm"
+                >
+                  Reset to Default
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+        </div>
+
+        <div className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
+
+          {/* Data Export */}
+          <Card>
+            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">Data Export</h2>
             <p className="text-body text-gray-600 mb-6">
               Export your knowledge base for backup or migration purposes.
             </p>
@@ -158,11 +262,11 @@ const SettingsScreen: React.FC = () => {
             </Button>
           </Card>
 
-          {/* Sample Prompts */}
+          {/* Summarization Prompt Templates */}
           <Card>
-            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">Prompt Templates</h2>
+            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">Summarization Templates</h2>
             <p className="text-body text-gray-600 mb-6">
-              Get started with these proven prompt templates, or use them as inspiration for your own custom prompts.
+              Get started with these proven summarization prompt templates, or use them as inspiration for your own custom prompts.
             </p>
             
             <div className="grid gap-3 sm:gap-4">
@@ -193,7 +297,53 @@ const SettingsScreen: React.FC = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => setEditedPrompt(template.prompt)}
+                      onClick={() => setEditedSummarizationPrompt(template.prompt)}
+                      className="w-full sm:w-auto sm:flex-shrink-0"
+                    >
+                      Use Template
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Card>
+
+          {/* Content Cleaning Prompt Templates */}
+          <Card>
+            <h2 className="text-lg sm:text-h2 font-semibold text-gray-900 mb-4">Content Cleaning Templates</h2>
+            <p className="text-body text-gray-600 mb-6">
+              Choose from these content cleaning prompt templates to customize how articles are cleaned.
+            </p>
+            
+            <div className="grid gap-3 sm:gap-4">
+              {[
+                {
+                  title: "Conservative Cleaning",
+                  description: "Removes only obvious non-article content like navigation and ads",
+                  prompt: "Remove navigation menus, advertisements, social media buttons, and other non-article content. Preserve the main article text exactly as written, including all formatting and structure."
+                },
+                {
+                  title: "Aggressive Cleaning", 
+                  description: "More thorough removal of metadata, author info, and promotional content",
+                  prompt: "Remove all non-essential content including navigation, ads, author bios, related articles, comments, promotional content, and metadata. Keep only the main article title and body content. Preserve original text and formatting exactly."
+                },
+                {
+                  title: "Academic Focus",
+                  description: "Optimized for academic and research articles",
+                  prompt: "Clean this academic article by removing website navigation, promotional content, and social elements while preserving the title, abstract, main content, citations, and any academic formatting. Keep all scholarly elements intact."
+                }
+              ].map((template, index) => (
+                <Card key={index} padding="sm" className="border border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-body sm:text-body-lg font-semibold text-gray-900 mb-1">{template.title}</h3>
+                      <p className="text-body-sm text-gray-500 mb-3">{template.description}</p>
+                      <p className="text-body text-gray-700 italic">"{template.prompt}"</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditedCleaningPrompt(template.prompt)}
                       className="w-full sm:w-auto sm:flex-shrink-0"
                     >
                       Use Template

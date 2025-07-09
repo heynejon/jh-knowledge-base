@@ -23,6 +23,7 @@ export interface Article {
 
 export interface Settings {
   summarization_prompt: string;
+  cleaning_prompt: string;
 }
 
 export const articleApi = {

@@ -46,8 +46,13 @@ def clean_article_content(raw_text: str) -> str:
         # Initialize OpenAI client
         client = OpenAI(api_key=api_key)
         
-        # Prompt for content cleaning
-        cleaning_prompt = """You are a content extraction specialist. Your task is to clean scraped webpage content by removing all irrelevant elements while preserving the main article text EXACTLY as written.
+        # Get cleaning prompt from settings
+        from database import SettingsService
+        cleaning_prompt = SettingsService.get_setting("cleaning_prompt")
+        
+        # Fall back to default if not set
+        if not cleaning_prompt:
+            cleaning_prompt = """You are a content extraction specialist. Your task is to clean scraped webpage content by removing all irrelevant elements while preserving the main article text EXACTLY as written.
 
 CRITICAL INSTRUCTIONS:
 1. NEVER change, rephrase, or modify even a single word of the actual article content

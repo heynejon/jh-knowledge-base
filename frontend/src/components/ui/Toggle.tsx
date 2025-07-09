@@ -60,10 +60,10 @@ const Toggle: React.FC<ToggleProps> = ({
       {/* Sliding background */}
       <div
         className={`absolute top-1 ${sizes.slider} bg-white rounded-md shadow-md transition-all duration-300 ease-out transform ${
-          isRight ? 'translate-x-[100%]' : 'translate-x-0'
+          isRight ? 'translate-x-[calc(100%-0.125rem)]' : 'translate-x-0.5'
         }`}
         style={{
-          width: 'calc(50% - 0.125rem)',
+          width: 'calc(50% - 0.25rem)',
         }}
       />
       
