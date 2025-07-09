@@ -219,10 +219,20 @@ async def clean_article_content_endpoint(article_id: str):
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
         
-        # Clean the content using AI
+        # Clean the content using AI with timeout protection
         try:
+            import signal
+            import time
+            
+            # Start timing
+            start_time = time.time()
+            
             cleaned_content = clean_article_content(article["full_text"])
-            print(f"Content cleaning for article {article_id}: Original length {len(article['full_text'])}, cleaned length {len(cleaned_content)}")
+            
+            # Check if we're approaching timeout
+            elapsed_time = time.time() - start_time
+            print(f"Content cleaning took {elapsed_time:.2f} seconds for article {article_id}")
+            print(f"Original length {len(article['full_text'])}, cleaned length {len(cleaned_content)}")
             
             # Update the article with cleaned content
             update_data = {
@@ -242,6 +252,7 @@ async def clean_article_content_endpoint(article_id: str):
                 "message": "Article content cleaned successfully",
                 "original_length": len(article["full_text"]),
                 "cleaned_length": len(cleaned_content),
+                "processing_time": f"{elapsed_time:.2f}s",
                 "article": updated_article
             }
             

@@ -85,9 +85,8 @@ KEEP these elements:
 
 Return ONLY the cleaned article content with no additional commentary or explanation."""
 
-        # Handle longer content by using more tokens
-        # GPT-4o-mini can handle up to 128k tokens, so let's be more generous
-        text_to_clean = raw_text[:20000]  # Much larger input limit
+        # Optimize for Heroku's 30-second timeout - use smaller input for faster processing
+        text_to_clean = raw_text[:12000]  # Reduced input size for faster processing
         
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -95,7 +94,7 @@ Return ONLY the cleaned article content with no additional commentary or explana
                 {"role": "system", "content": cleaning_prompt},
                 {"role": "user", "content": f"Clean this scraped content:\n\n{text_to_clean}"}
             ],
-            max_tokens=16000,  # Much larger output limit to avoid cutting off articles
+            max_tokens=8000,  # Reduced output limit for faster processing
             temperature=0.1  # Low temperature for consistent cleaning
         )
         
