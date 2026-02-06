@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { DEV_USER_ID } from '@/lib/constants';
+import { createClient } from '@/lib/supabase-server';
 
 // GET all articles
 export async function GET() {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { data, error } = await supabase
       .from('articles')
       .select('*')
-      .eq('user_id', DEV_USER_ID)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -23,6 +29,13 @@ export async function GET() {
 // POST new article
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { title, publication_name, source_url, full_text, summary } = body;
 
@@ -33,7 +46,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('articles')
       .insert({
-        user_id: DEV_USER_ID,
+        user_id: user.id,
         title,
         publication_name,
         source_url,

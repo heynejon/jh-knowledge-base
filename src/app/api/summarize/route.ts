@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateSummary } from '@/lib/openai';
-import { supabase } from '@/lib/supabase';
-import { DEV_USER_ID, DEFAULT_SUMMARY_PROMPT } from '@/lib/constants';
+import { createClient } from '@/lib/supabase-server';
+import { DEFAULT_SUMMARY_PROMPT } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { text } = await request.json();
 
     if (!text) {
@@ -15,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { data: settings } = await supabase
       .from('settings')
       .select('summary_prompt')
-      .eq('user_id', DEV_USER_ID)
+      .eq('user_id', user.id)
       .single();
 
     const prompt = settings?.summary_prompt || DEFAULT_SUMMARY_PROMPT;

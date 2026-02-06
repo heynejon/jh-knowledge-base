@@ -111,59 +111,72 @@ jh-knowledge-base/
 
 ---
 
-## 5. Database & Auth Architecture (Supabase)
+## 5. Supabase Architecture
 
-This app uses Supabase Postgres in a shared database that hosts multiple independent apps.
-To avoid collisions and allow future spin-out, follow these rules strictly:
+  **Project structure:**
+  - Two Supabase projects: **Personal Apps** (this project) and **Commercial Apps**
+  - Each app within a project uses schema-based environment isolation
+  - To avoid collisions and allow future spin-out, follow these rules strictly
 
-### Schema Isolation
-- All app data lives in its own Postgres schema: `app_jh_kb`
-- Do not create tables in `public`
-- Do not reference tables from other app schemas
-- No cross-app foreign keys
-- **Important:** The schema must be added to Supabase's exposed schemas for the API to access it:
-  ```sql
-  ALTER DATABASE postgres SET pgrst.db_schemas = 'public, graphql_public, app_jh_kb';
-  NOTIFY pgrst, 'reload config';
-  ```
+  **Schema naming convention:**
+  - Production: `App_[app_name]__prod` (e.g., `App_coursesummarizer__prod`)
+  - Development: `App_[app_name]__dev` (e.g., `App_coursesummarizer__dev`)
 
-### User-Owned Data
-- Any table that stores per-user data must include:
-  - `user_id UUID NOT NULL REFERENCES auth.users(id)`
-  - `created_at TIMESTAMPTZ DEFAULT NOW()`
-- Each row belongs to exactly one authenticated user
+  **Schema exposure:**
+  - New schemas must be added to Supabase's exposed schemas for the API to access them:
+    ```sql
+    ALTER DATABASE postgres SET pgrst.db_schemas = 'public, graphql_public, App_[app_name]__prod, App_[app_name]__dev';
+    NOTIFY pgrst, 'reload config';
+    ```
 
-### Row Level Security (RLS)
-- Enable RLS on **all** app tables
-- Enforce owner-based access:
-  - SELECT / UPDATE / DELETE: `user_id = auth.uid()`
-  - INSERT: `user_id = auth.uid()`
-- Do not rely on application code for authorization; enforce it in SQL policies
-- Keep policies simple (`user_id = auth.uid()`) so `core.app_access` gating can be added later without refactoring
+  **Environment configuration:**
+  - SUPABASE_SCHEMA env var determines which schema to use
+  - Set in .env.local (localhost) and Vercel env vars (production)
+  - These files are gitignored; code never hardcodes schema names
+  - Production must have SUPABASE_SCHEMA set explicitly (fails fast if missing)
 
-### Auth Scope
-- Auth is project-wide; assume other apps exist in the same DB
-- Never assume the current user is the only user
-- Do not allow access to rows owned by other users
+  **What IS isolated by schema:**
+  - All database tables and data
 
-### Storage
-- Use a dedicated storage bucket: `jh-kb-files`
-- Store files under `<user_id>/...`
-- Enforce owner-only access via storage policies
+  **What is NOT isolated (shared across schemas):**
+  - Storage buckets (uploads, artifacts) - uses UUIDs so no practical conflict
+  - Auth users - same login works in both environments
 
-### Spin-Out Requirement
-- All app tables, enums, functions, and triggers must live in `app_jh_kb` schema
-- The schema must be exportable and deployable to a new Supabase project without refactoring
+  **Row Level Security (RLS):**
+  - Enable RLS on all app tables
+  - Enforce owner-based access:
+    - SELECT / UPDATE / DELETE: user_id = auth.uid()
+    - INSERT: user_id = auth.uid()
+  - Do not rely on application code for authorization; enforce it in SQL policies
+  - Keep policies simple (user_id = auth.uid()) so core.app_access gating can be added later without refactoring
+
+  **Storage (if applicable):**
+  - Use a dedicated storage bucket: [app_name]-files
+  - Store files under <user_id>/...
+  - Enforce owner-only access via storage policies
+
+  **Spin-out requirement:**
+  - All app tables, enums, functions, and triggers must live in the app's schema
+  - The schema must be exportable and deployable to a new Supabase project without refactoring
+
+  **When making database changes:**
+  1. Write migration in supabase/migrations/
+  2. Test migration on the dev schema first via Supabase SQL Editor
+  3. Before deploying to Vercel, run the same migration on the prod schema
+  4. Deploy code to Vercel
 
 Follow these conventions exactly unless explicitly instructed otherwise.
+
 
 ---
 
 ## 6. Database Schema
 
-**Schema:** `app_jh_kb`
+**Schemas:**
+- Production: `App_jhknowledgebase__prod`
+- Development: `App_jhknowledgebase__dev`
 
-### app_jh_kb.articles
+### articles
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -175,12 +188,20 @@ Follow these conventions exactly unless explicitly instructed otherwise.
 | summary | TEXT | LLM-generated summary |
 | created_at | TIMESTAMPTZ | When saved |
 
-### app_jh_kb.settings
+### settings
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
 | user_id | UUID | Owner (references auth.users) |
 | summary_prompt | TEXT | Custom prompt for LLM |
+| updated_at | TIMESTAMPTZ | Last modified |
+
+### settings_defaults
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | UUID | Owner (references auth.users) |
+| default_prompt | TEXT | Default prompt template |
 | updated_at | TIMESTAMPTZ | Last modified |
 
 ---

@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { DEV_USER_ID, DEFAULT_SUMMARY_PROMPT } from '@/lib/constants';
+import { createClient } from '@/lib/supabase-server';
+import { DEFAULT_SUMMARY_PROMPT } from '@/lib/constants';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 // GET settings (includes both current and default prompt)
 export async function GET() {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Get current settings
     const { data: current, error: currentError } = await supabase
       .from('settings')
       .select('*')
-      .eq('user_id', DEV_USER_ID)
+      .eq('user_id', user.id)
       .single();
 
     if (currentError && currentError.code !== 'PGRST116') throw currentError;
@@ -17,18 +25,18 @@ export async function GET() {
     // Get default settings
     const { data: defaults, error: defaultsError } = await supabase
       .from('settings_defaults')
-      .select('summary_prompt')
-      .eq('user_id', DEV_USER_ID)
+      .select('default_prompt')
+      .eq('user_id', user.id)
       .single();
 
     if (defaultsError && defaultsError.code !== 'PGRST116') throw defaultsError;
 
     const currentPrompt = current?.summary_prompt || DEFAULT_SUMMARY_PROMPT;
-    const defaultPrompt = defaults?.summary_prompt || DEFAULT_SUMMARY_PROMPT;
+    const defaultPrompt = defaults?.default_prompt || DEFAULT_SUMMARY_PROMPT;
 
     return NextResponse.json({
       id: current?.id || null,
-      user_id: DEV_USER_ID,
+      user_id: user.id,
       summary_prompt: currentPrompt,
       default_prompt: defaultPrompt,
       updated_at: current?.updated_at || null,
@@ -42,6 +50,13 @@ export async function GET() {
 // PATCH update settings
 export async function PATCH(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { summary_prompt, action } = body;
 
@@ -49,16 +64,16 @@ export async function PATCH(request: NextRequest) {
       // Get default prompt
       const { data: defaults, error: defaultsError } = await supabase
         .from('settings_defaults')
-        .select('summary_prompt')
-        .eq('user_id', DEV_USER_ID)
+        .select('default_prompt')
+        .eq('user_id', user.id)
         .single();
 
       if (defaultsError && defaultsError.code !== 'PGRST116') throw defaultsError;
 
-      const defaultPrompt = defaults?.summary_prompt || DEFAULT_SUMMARY_PROMPT;
+      const defaultPrompt = defaults?.default_prompt || DEFAULT_SUMMARY_PROMPT;
 
       // Update current settings to default
-      await upsertSettings(defaultPrompt);
+      await upsertSettings(supabase, user.id, defaultPrompt);
 
       return NextResponse.json({ summary_prompt: defaultPrompt });
     }
@@ -69,8 +84,8 @@ export async function PATCH(request: NextRequest) {
       }
 
       // Update both current and default
-      await upsertSettings(summary_prompt);
-      await upsertDefaults(summary_prompt);
+      await upsertSettings(supabase, user.id, summary_prompt);
+      await upsertDefaults(supabase, user.id, summary_prompt);
 
       return NextResponse.json({ summary_prompt, default_prompt: summary_prompt });
     }
@@ -80,7 +95,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Summary prompt is required' }, { status: 400 });
     }
 
-    await upsertSettings(summary_prompt);
+    await upsertSettings(supabase, user.id, summary_prompt);
 
     return NextResponse.json({ summary_prompt });
   } catch (error) {
@@ -89,44 +104,44 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-async function upsertSettings(summary_prompt: string) {
+async function upsertSettings(supabase: SupabaseClient, userId: string, summary_prompt: string) {
   const { data: existing } = await supabase
     .from('settings')
     .select('id')
-    .eq('user_id', DEV_USER_ID)
+    .eq('user_id', userId)
     .single();
 
   if (existing) {
     const { error } = await supabase
       .from('settings')
       .update({ summary_prompt, updated_at: new Date().toISOString() })
-      .eq('user_id', DEV_USER_ID);
+      .eq('user_id', userId);
     if (error) throw error;
   } else {
     const { error } = await supabase
       .from('settings')
-      .insert({ user_id: DEV_USER_ID, summary_prompt });
+      .insert({ user_id: userId, summary_prompt });
     if (error) throw error;
   }
 }
 
-async function upsertDefaults(summary_prompt: string) {
+async function upsertDefaults(supabase: SupabaseClient, userId: string, prompt: string) {
   const { data: existing } = await supabase
     .from('settings_defaults')
     .select('id')
-    .eq('user_id', DEV_USER_ID)
+    .eq('user_id', userId)
     .single();
 
   if (existing) {
     const { error } = await supabase
       .from('settings_defaults')
-      .update({ summary_prompt, updated_at: new Date().toISOString() })
-      .eq('user_id', DEV_USER_ID);
+      .update({ default_prompt: prompt, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
     if (error) throw error;
   } else {
     const { error } = await supabase
       .from('settings_defaults')
-      .insert({ user_id: DEV_USER_ID, summary_prompt });
+      .insert({ user_id: userId, default_prompt: prompt });
     if (error) throw error;
   }
 }
