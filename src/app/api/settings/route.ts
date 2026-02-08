@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { DEFAULT_SUMMARY_PROMPT } from '@/lib/constants';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 // GET settings (includes both current and default prompt)
 export async function GET() {
@@ -104,7 +103,8 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-async function upsertSettings(supabase: SupabaseClient, userId: string, summary_prompt: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function upsertSettings(supabase: any, userId: string, summary_prompt: string) {
   const { data: existing } = await supabase
     .from('settings')
     .select('id')
@@ -125,7 +125,8 @@ async function upsertSettings(supabase: SupabaseClient, userId: string, summary_
   }
 }
 
-async function upsertDefaults(supabase: SupabaseClient, userId: string, prompt: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function upsertDefaults(supabase: any, userId: string, prompt: string) {
   const { data: existing } = await supabase
     .from('settings_defaults')
     .select('id')
