@@ -3,6 +3,9 @@ import { generateSummary } from '@/lib/openai';
 import { createClient } from '@/lib/supabase-server';
 import { DEFAULT_SUMMARY_PROMPT } from '@/lib/constants';
 
+// Force Node.js runtime
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();

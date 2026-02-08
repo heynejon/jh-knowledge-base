@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractArticle } from '@/lib/extractor';
 
+// Force Node.js runtime for JSDOM compatibility
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json();
