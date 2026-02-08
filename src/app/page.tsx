@@ -39,8 +39,15 @@ export default function Home() {
   const normalizeUrl = (url: string): string => {
     try {
       const parsed = new URL(url);
+      // Remove tracking parameters (UTM, etc.)
+      const trackingParams = [
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+        'fbclid', 'gclid', 'ref', 'source', 'mc_cid', 'mc_eid'
+      ];
+      trackingParams.forEach(param => parsed.searchParams.delete(param));
       // Remove trailing slash and normalize
-      return parsed.origin + parsed.pathname.replace(/\/$/, '') + parsed.search;
+      const search = parsed.searchParams.toString();
+      return parsed.origin + parsed.pathname.replace(/\/$/, '') + (search ? '?' + search : '');
     } catch {
       return url;
     }
