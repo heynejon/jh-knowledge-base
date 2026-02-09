@@ -7,12 +7,12 @@ describe('UrlInput', () => {
   it('renders input and button', () => {
     render(<UrlInput onSubmit={() => {}} isLoading={false} />);
     expect(screen.getByPlaceholderText('Paste article URL...')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add Knowledge Item' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
   });
 
   it('disables button when input is empty', () => {
     render(<UrlInput onSubmit={() => {}} isLoading={false} />);
-    const button = screen.getByRole('button', { name: 'Add Knowledge Item' });
+    const button = screen.getByRole('button', { name: 'Add' });
     expect(button).toBeDisabled();
   });
 
@@ -23,7 +23,7 @@ describe('UrlInput', () => {
     const input = screen.getByPlaceholderText('Paste article URL...');
     await user.type(input, 'https://example.com/article');
 
-    const button = screen.getByRole('button', { name: 'Add Knowledge Item' });
+    const button = screen.getByRole('button', { name: 'Add' });
     expect(button).toBeEnabled();
   });
 
@@ -34,14 +34,14 @@ describe('UrlInput', () => {
 
     const input = screen.getByPlaceholderText('Paste article URL...');
     await user.type(input, '  https://example.com/article  ');
-    await user.click(screen.getByRole('button', { name: 'Add Knowledge Item' }));
+    await user.click(screen.getByRole('button', { name: 'Add' }));
 
     expect(handleSubmit).toHaveBeenCalledWith('https://example.com/article');
   });
 
   it('shows loading state', () => {
     render(<UrlInput onSubmit={() => {}} isLoading={true} />);
-    expect(screen.getByRole('button', { name: 'Processing...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Adding...' })).toBeDisabled();
     expect(screen.getByPlaceholderText('Paste article URL...')).toBeDisabled();
   });
 
@@ -53,7 +53,7 @@ describe('UrlInput', () => {
     const input = screen.getByPlaceholderText('Paste article URL...');
     await user.type(input, '   ');
 
-    const button = screen.getByRole('button', { name: 'Add Knowledge Item' });
+    const button = screen.getByRole('button', { name: 'Add' });
     expect(button).toBeDisabled();
   });
 });

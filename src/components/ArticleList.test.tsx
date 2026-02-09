@@ -36,7 +36,8 @@ const mockArticles: Article[] = [
 describe('ArticleList', () => {
   it('shows empty state when no articles', () => {
     render(<ArticleList articles={[]} onDelete={() => {}} />);
-    expect(screen.getByText('No articles yet. Add your first knowledge item above.')).toBeInTheDocument();
+    expect(screen.getByText('No articles yet')).toBeInTheDocument();
+    expect(screen.getByText('Add your first knowledge item using the form above.')).toBeInTheDocument();
   });
 
   it('renders all articles', () => {
@@ -63,6 +64,6 @@ describe('ArticleList', () => {
 
   it('does not show empty state when articles exist', () => {
     render(<ArticleList articles={mockArticles} onDelete={() => {}} />);
-    expect(screen.queryByText('No articles yet. Add your first knowledge item above.')).not.toBeInTheDocument();
+    expect(screen.queryByText('No articles yet')).not.toBeInTheDocument();
   });
 });

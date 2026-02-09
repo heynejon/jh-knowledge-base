@@ -66,8 +66,8 @@ describe('ConfirmModal', () => {
     const handleCancel = vi.fn();
     render(<ConfirmModal {...defaultProps} onCancel={handleCancel} />);
 
-    // Click the backdrop (the dark overlay behind the modal)
-    const backdrop = document.querySelector('.bg-black\\/50');
+    // Click the backdrop (the dark overlay behind the modal - now uses bg-slate-900/50)
+    const backdrop = document.querySelector('.bg-slate-900\\/50');
     await user.click(backdrop!);
 
     expect(handleCancel).toHaveBeenCalledTimes(1);

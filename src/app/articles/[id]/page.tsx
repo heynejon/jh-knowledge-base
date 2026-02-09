@@ -74,15 +74,33 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
   };
 
   if (isLoading) {
-    return <div className="text-center py-12 text-gray-500">Loading article...</div>;
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-4 w-32 bg-slate-200 rounded" />
+        <div className="space-y-3">
+          <div className="h-8 w-3/4 bg-slate-200 rounded" />
+          <div className="h-4 w-1/2 bg-slate-200 rounded" />
+        </div>
+        <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="h-4 w-full bg-slate-200 rounded mb-2" />
+          <div className="h-4 w-full bg-slate-200 rounded mb-2" />
+          <div className="h-4 w-2/3 bg-slate-200 rounded" />
+        </div>
+      </div>
+    );
   }
 
   if (error || !article) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600 mb-4">{error || 'Article not found'}</p>
-        <Link href="/" className="text-blue-600 hover:underline">
-          Back to articles
+      <div className="text-center py-16">
+        <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-slate-900 mb-2">{error || 'Article not found'}</h3>
+        <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
+          ← Back to articles
         </Link>
       </div>
     );
@@ -97,35 +115,54 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
   return (
     <div className="space-y-6">
       {/* Back link */}
-      <Link href="/" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
-        ← Back to articles
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors duration-150"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to articles
       </Link>
 
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{article.title}</h1>
-        <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-          {article.publication_name && (
-            <>
-              <span>{article.publication_name}</span>
-              <span>•</span>
-            </>
-          )}
-          <span>{formattedDate}</span>
-          <span>•</span>
+      {/* Header Card */}
+      <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+        {/* Publication badge */}
+        {article.publication_name && (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 mb-3">
+            {article.publication_name}
+          </span>
+        )}
+
+        {/* Title */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+          {article.title}
+        </h1>
+
+        {/* Metadata */}
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>{formattedDate}</span>
+          </div>
           <a
             href={article.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-150"
           >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
             View original
           </a>
         </div>
       </div>
 
       {/* Content */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
         <ArticleView
           article={article}
           onSummaryUpdate={handleSummaryUpdate}
@@ -133,14 +170,20 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
         />
       </div>
 
-      {/* Delete */}
-      <div className="pt-4 border-t border-gray-200">
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          className="text-sm text-red-600 hover:text-red-800"
-        >
-          Delete this article
-        </button>
+      {/* Danger Zone */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-slate-900">Delete this article</h3>
+            <p className="text-sm text-slate-500 mt-0.5">Once deleted, this cannot be undone.</p>
+          </div>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-white border border-red-200 hover:bg-red-600 hover:border-red-600 rounded-lg transition-all duration-150"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}

@@ -34,27 +34,37 @@ export default function ArticleView({ article, onSummaryUpdate, isEditable = tru
 
   return (
     <div>
-      {/* Toggle */}
-      <div className="flex gap-2 mb-4">
+      {/* Toggle Tabs */}
+      <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit mb-6">
         <button
           onClick={() => setView('summary')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-150 ${
             view === 'summary'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Summary
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Summary
+          </span>
         </button>
         <button
           onClick={() => setView('full')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-150 ${
             view === 'full'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Full Text
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            Full Text
+          </span>
         </button>
       </div>
 
@@ -62,24 +72,39 @@ export default function ArticleView({ article, onSummaryUpdate, isEditable = tru
       {view === 'summary' ? (
         <div>
           {isEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <textarea
                 value={editedSummary}
                 onChange={(e) => setEditedSummary(e.target.value)}
-                className="w-full h-64 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                className="w-full h-64 p-4 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y font-mono text-sm transition-colors duration-150"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                  className="h-10 px-4 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-150 flex items-center gap-2"
                 >
-                  {isSaving ? 'Saving...' : 'Save'}
+                  {isSaving ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Save</span>
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handleCancel}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  className="h-10 px-4 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                 >
                   Cancel
                 </button>
@@ -87,14 +112,17 @@ export default function ArticleView({ article, onSummaryUpdate, isEditable = tru
             </div>
           ) : (
             <div>
-              <div className="prose prose-gray max-w-none">
+              <div className="prose prose-slate max-w-none">
                 <ReactMarkdown>{article.summary}</ReactMarkdown>
               </div>
               {isEditable && onSummaryUpdate && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-800"
+                  className="mt-6 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-150"
                 >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                   Edit Summary
                 </button>
               )}
@@ -102,7 +130,7 @@ export default function ArticleView({ article, onSummaryUpdate, isEditable = tru
           )}
         </div>
       ) : (
-        <div className="prose prose-gray max-w-none">
+        <div className="prose prose-slate max-w-none">
           <ReactMarkdown>{article.full_text}</ReactMarkdown>
         </div>
       )}

@@ -53,14 +53,14 @@ describe('ArticleView', () => {
       const summaryButton = screen.getByRole('button', { name: 'Summary' });
       const fullTextButton = screen.getByRole('button', { name: 'Full Text' });
 
-      // Summary is active by default
-      expect(summaryButton).toHaveClass('bg-blue-600');
-      expect(fullTextButton).not.toHaveClass('bg-blue-600');
+      // Summary is active by default (now uses bg-white shadow-sm for active state)
+      expect(summaryButton).toHaveClass('bg-white');
+      expect(fullTextButton).not.toHaveClass('bg-white');
 
       await user.click(fullTextButton);
 
-      expect(fullTextButton).toHaveClass('bg-blue-600');
-      expect(summaryButton).not.toHaveClass('bg-blue-600');
+      expect(fullTextButton).toHaveClass('bg-white');
+      expect(summaryButton).not.toHaveClass('bg-white');
     });
   });
 
