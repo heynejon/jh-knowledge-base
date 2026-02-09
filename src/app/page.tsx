@@ -7,6 +7,8 @@ import UrlInput from '@/components/UrlInput';
 import SearchBar from '@/components/SearchBar';
 import ArticleList from '@/components/ArticleList';
 import ConfirmModal from '@/components/ConfirmModal';
+import { normalizeUrl } from '@/lib/url-utils';
+import { filterArticles } from '@/lib/search-utils';
 
 export default function Home() {
   const router = useRouter();
@@ -33,23 +35,6 @@ export default function Home() {
       console.error('Error fetching articles:', err);
     } finally {
       setIsLoadingArticles(false);
-    }
-  };
-
-  const normalizeUrl = (url: string): string => {
-    try {
-      const parsed = new URL(url);
-      // Remove tracking parameters (UTM, etc.)
-      const trackingParams = [
-        'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-        'fbclid', 'gclid', 'ref', 'source', 'mc_cid', 'mc_eid'
-      ];
-      trackingParams.forEach(param => parsed.searchParams.delete(param));
-      // Remove trailing slash and normalize
-      const search = parsed.searchParams.toString();
-      return parsed.origin + parsed.pathname.replace(/\/$/, '') + (search ? '?' + search : '');
-    } catch {
-      return url;
     }
   };
 
@@ -161,15 +146,7 @@ export default function Home() {
   };
 
   const filteredArticles = useMemo(() => {
-    if (!searchQuery.trim()) return articles;
-    const query = searchQuery.toLowerCase();
-    return articles.filter(
-      (article) =>
-        article.title.toLowerCase().includes(query) ||
-        article.publication_name?.toLowerCase().includes(query) ||
-        article.summary.toLowerCase().includes(query) ||
-        article.full_text.toLowerCase().includes(query)
-    );
+    return filterArticles(articles, searchQuery);
   }, [articles, searchQuery]);
 
   return (
