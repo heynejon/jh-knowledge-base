@@ -12,6 +12,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "JH Knowledge Base",
   description: "Capture, summarize, and organize online articles",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Knowledge Base",
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
