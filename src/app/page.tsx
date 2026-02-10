@@ -21,6 +21,7 @@ export default function Home() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [duplicateArticle, setDuplicateArticle] = useState<{ url: string; existingId: string; existingTitle: string } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showAddArticle, setShowAddArticle] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedPublication, setSelectedPublication] = useState('');
@@ -186,8 +187,32 @@ export default function Home() {
   return (
     <div className="space-y-8">
       {/* URL Input Section */}
-      <section className="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
-        <div className="flex items-center gap-2 mb-4">
+      <section className="bg-white p-4 md:p-6 lg:p-8 rounded-xl shadow-sm border border-slate-200">
+        {/* Mobile: Clickable header to expand/collapse */}
+        <button
+          onClick={() => setShowAddArticle(!showAddArticle)}
+          className="md:hidden w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-slate-900">Add New Article</h2>
+          </div>
+          <svg
+            className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${showAddArticle ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Desktop: Always visible header */}
+        <div className="hidden md:flex items-center gap-2 mb-4">
           <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
             <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -195,20 +220,38 @@ export default function Home() {
           </div>
           <h2 className="text-lg font-semibold text-slate-900">Add New Article</h2>
         </div>
-        <UrlInput onSubmit={handleAddArticle} isLoading={isLoading} />
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
+
+        {/* Mobile: Collapsible content */}
+        <div className={`md:hidden ${showAddArticle ? 'mt-4' : 'hidden'}`}>
+          <UrlInput onSubmit={handleAddArticle} isLoading={isLoading} />
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: Always visible content */}
+        <div className="hidden md:block">
+          <UrlInput onSubmit={handleAddArticle} isLoading={isLoading} />
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Search and Filter */}
       <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+        {/* Desktop: Search bar + Filter button side by side */}
+        <div className="hidden md:flex gap-4 items-center">
           <div className="flex-1">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
           </div>
@@ -230,9 +273,29 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Filter Panel */}
+        {/* Mobile: Only Filter button */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`w-full h-11 px-5 text-sm font-medium border rounded-lg transition-all duration-150 flex items-center justify-center gap-2 ${
+              hasActiveFilters || searchQuery
+                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:border-slate-400'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Search & Filter
+            {(hasActiveFilters || searchQuery) && (
+              <span className="w-2 h-2 bg-blue-600 rounded-full" />
+            )}
+          </button>
+        </div>
+
+        {/* Desktop: Filter Panel (no search) */}
         {showFilters && (
-          <div className="bg-white p-4 rounded-lg border border-slate-200 animate-scale-in">
+          <div className="hidden md:block bg-white p-4 rounded-lg border border-slate-200 animate-scale-in">
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Date Range */}
               <div className="flex-1 space-y-2">
@@ -285,6 +348,71 @@ export default function Home() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Mobile: Filter Panel (includes search) */}
+        {showFilters && (
+          <div className="md:hidden bg-white p-4 rounded-lg border border-slate-200 animate-scale-in space-y-4">
+            {/* Search */}
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide">
+                Search
+              </label>
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
+
+            {/* Date Range */}
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide">
+                Date Range
+              </label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="flex-1 h-10 px-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-150"
+                />
+                <span className="text-slate-400 text-sm">to</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="flex-1 h-10 px-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-150"
+                />
+              </div>
+            </div>
+
+            {/* Publication */}
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide">
+                Publication
+              </label>
+              <select
+                value={selectedPublication}
+                onChange={(e) => setSelectedPublication(e.target.value)}
+                className="w-full h-10 px-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-150"
+              >
+                <option value="">All publications</option>
+                {publications.map((pub) => (
+                  <option key={pub} value={pub}>{pub}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clear Filters */}
+            {(hasActiveFilters || searchQuery) && (
+              <button
+                onClick={() => {
+                  clearFilters();
+                  setSearchQuery('');
+                }}
+                className="w-full h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-300 rounded-lg transition-colors duration-150"
+              >
+                Clear All
+              </button>
+            )}
           </div>
         )}
       </section>
