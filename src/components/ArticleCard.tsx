@@ -33,7 +33,7 @@ export default function ArticleCard({ article, onDelete }: ArticleCardProps) {
 
             {/* Summary preview - hidden on mobile */}
             {article.summary && (
-              <p className="hidden md:block mt-2 text-sm text-slate-500 line-clamp-2">
+              <p className="hidden md:line-clamp-2 mt-2 text-sm text-slate-500">
                 {article.summary}
               </p>
             )}
